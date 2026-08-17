@@ -52,6 +52,7 @@ export default function ProductImageGallery({
                 type="button"
                 onClick={() => setSelectedImage(image)}
                 aria-label={`View ${image.alt || productName}`}
+                aria-pressed={isSelected}
                 className={`relative aspect-square overflow-hidden rounded-xl bg-gray-100 ring-offset-2 transition ${
                   isSelected
                     ? "ring-2 ring-gray-950"

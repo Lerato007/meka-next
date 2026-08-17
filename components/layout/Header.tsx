@@ -5,6 +5,9 @@ import { auth, signOut } from "@/auth"
 import CartButton from "@/components/layout/CartButton"
 import MobileHeaderMenu from "@/components/layout/MobileHeaderMenu"
 
+const navLinkClassName =
+  "rounded-md transition hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
+
 export default async function Header() {
   const session = await auth()
 
@@ -12,8 +15,9 @@ export default async function Header() {
   const isAdmin = session?.user?.role === "ADMIN"
 
   const firstName =
-    session?.user?.name?.trim().split(" ")[0] ||
-    "Customer"
+    session?.user?.name
+      ?.trim()
+      .split(" ")[0] || "Customer"
 
   async function handleSignOut() {
     "use server"
@@ -28,12 +32,12 @@ export default async function Header() {
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-3"
-          aria-label="Meka.WC home"
+          className="flex shrink-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
+          aria-label="MekaWC home"
         >
           <Image
             src="/mekalogo.png"
-            alt="Meka.WC logo"
+            alt="MekaWC logo"
             width={44}
             height={44}
             priority
@@ -41,21 +45,24 @@ export default async function Header() {
           />
 
           <span className="text-xl font-bold tracking-tight text-gray-950 sm:text-2xl">
-            Meka.WC
+            MekaWC
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-5 text-sm font-medium md:flex">
+        <nav
+          aria-label="Main navigation"
+          className="hidden items-center gap-5 text-sm font-medium md:flex"
+        >
           <Link
             href="/"
-            className="transition hover:text-gray-600"
+            className={navLinkClassName}
           >
             Home
           </Link>
 
           <Link
             href="/products"
-            className="transition hover:text-gray-600"
+            className={navLinkClassName}
           >
             Shop
           </Link>
@@ -63,7 +70,7 @@ export default async function Header() {
           {isAdmin && (
             <Link
               href="/admin"
-              className="transition hover:text-gray-600"
+              className={navLinkClassName}
             >
               Admin
             </Link>
@@ -75,14 +82,14 @@ export default async function Header() {
             <>
               <Link
                 href="/login"
-                className="transition hover:text-gray-600"
+                className={navLinkClassName}
               >
                 Login
               </Link>
 
               <Link
                 href="/register"
-                className="btn-primary px-4 py-2"
+                className="btn-primary px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
               >
                 Register
               </Link>
@@ -91,7 +98,8 @@ export default async function Header() {
             <>
               <Link
                 href="/account"
-                className="rounded-lg px-3 py-2 text-gray-700 transition hover:bg-gray-100 hover:text-gray-950"
+                className="rounded-lg px-3 py-2 text-gray-700 transition hover:bg-gray-100 hover:text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
+                aria-label={`Open account dashboard for ${firstName}`}
               >
                 Hi, {firstName}
               </Link>
@@ -99,7 +107,7 @@ export default async function Header() {
               <form action={handleSignOut}>
                 <button
                   type="submit"
-                  className="btn-secondary px-4 py-2"
+                  className="btn-secondary px-4 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
                 >
                   Logout
                 </button>
@@ -108,7 +116,10 @@ export default async function Header() {
           )}
         </nav>
 
-        <div className="flex items-center gap-2 md:hidden">
+        <div
+          className="flex items-center gap-2 md:hidden"
+          aria-label="Mobile navigation controls"
+        >
           <CartButton />
 
           <MobileHeaderMenu

@@ -139,52 +139,80 @@ export default async function ProductsPage({
           </p>
 
           <form
-            action="/products"
-            className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_auto]"
-          >
-            {categoryId && (
-              <input
-                type="hidden"
-                name="categoryId"
-                value={categoryId}
-              />
-            )}
+  action="/products"
+  role="search"
+  className="mt-6 grid gap-3 md:grid-cols-[1fr_auto_auto]"
+>
+  {categoryId && (
+    <input
+      type="hidden"
+      name="categoryId"
+      value={categoryId}
+    />
+  )}
 
-            <input
-              type="search"
-              name="search"
-              defaultValue={search}
-              placeholder="Search products..."
-              className="form-input"
-            />
+  <div>
+    <label
+      htmlFor="product-search"
+      className="sr-only"
+    >
+      Search products
+    </label>
 
-            <select
-              name="sort"
-              defaultValue={sort}
-              className="form-input"
-            >
-              <option value="newest">Newest</option>
-              <option value="price-asc">
-                Price: Low to High
-              </option>
-              <option value="price-desc">
-                Price: High to Low
-              </option>
-              <option value="name-asc">
-                Name: A to Z
-              </option>
-              <option value="name-desc">
-                Name: Z to A
-              </option>
-            </select>
+    <input
+      id="product-search"
+      type="search"
+      name="search"
+      defaultValue={search}
+      placeholder="Search products..."
+      autoComplete="off"
+      className="form-input"
+    />
+  </div>
 
-            <button
-              type="submit"
-              className="btn-primary w-full md:w-auto"
-            >
-              Apply
-            </button>
-          </form>
+  <div>
+    <label
+      htmlFor="product-sort"
+      className="sr-only"
+    >
+      Sort products
+    </label>
+
+    <select
+      id="product-sort"
+      name="sort"
+      defaultValue={sort}
+      className="form-input"
+    >
+      <option value="newest">
+        Newest
+      </option>
+
+      <option value="price-asc">
+        Price: Low to High
+      </option>
+
+      <option value="price-desc">
+        Price: High to Low
+      </option>
+
+      <option value="name-asc">
+        Name: A to Z
+      </option>
+
+      <option value="name-desc">
+        Name: Z to A
+      </option>
+    </select>
+  </div>
+
+  <button
+    type="submit"
+    className="btn-primary w-full md:w-auto"
+  >
+    Apply
+  </button>
+</form>
 
           {(search || categoryId || sort !== "newest") && (
             <Link
@@ -289,7 +317,7 @@ export default async function ProductsPage({
                             product.name
                           }
                           fill
-                          sizes="(max-width: 768px) 100vw, 25vw"
+                          sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
                           className="object-cover transition duration-300 group-hover:scale-105"
                         />
                       ) : (

@@ -39,7 +39,6 @@ export default function CheckoutPage() {
   items,
   itemCount,
   subtotal,
-  clearCart,
 } = useCart()
 
 const router = useRouter()
@@ -167,8 +166,6 @@ const [submitError, setSubmitError] =
           "We could not create your order."
       )
     }
-
-    clearCart()
 
     router.push(
   `/payment/${encodeURIComponent(result.order.id)}`
@@ -470,7 +467,7 @@ const [submitError, setSubmitError] =
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/products/${item.slug}`}
-                      className="line-clamp-2 text-sm font-medium text-gray-900 hover:underline"
+                      className="line-clamp-2 rounded-sm text-sm font-medium text-gray-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
                     >
                       {item.name}
                     </Link>
@@ -529,19 +526,31 @@ const [submitError, setSubmitError] =
   </div>
 )}
 
+<div
+  className="sr-only"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  {isSubmitting
+    ? "Your order is being created. Please wait."
+    : ""}
+</div>
+
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-400"
-            >
-              {isSubmitting
-                ? "Creating order..."
-                : "Continue to payment"}
-            </button>
+  type="submit"
+  disabled={isSubmitting}
+  aria-disabled={isSubmitting}
+  aria-busy={isSubmitting}
+  className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+>
+  {isSubmitting
+    ? "Creating order..."
+    : "Continue to payment"}
+</button>
 
             <Link
               href="/cart"
-              className="mt-4 block text-center text-sm font-medium text-gray-600 hover:text-gray-900"
+              className="mt-4 block rounded-md text-center text-sm font-medium text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
             >
               Return to cart
             </Link>

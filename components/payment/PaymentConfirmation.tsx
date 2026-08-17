@@ -1,7 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react"
+
+import { useCart } from "@/components/cart/CartProvider"
 
 type OrderDetails = {
   id: string
@@ -46,15 +52,20 @@ function getOrderStatusLabel(status: string) {
   switch (status) {
     case "PENDING":
       return "Order received"
+
     case "PAID":
     case "PROCESSING":
       return "Preparing your order"
+
     case "SHIPPED":
       return "Out for delivery"
+
     case "DELIVERED":
       return "Delivered"
+
     case "CANCELLED":
       return "Cancelled"
+
     default:
       return status
         .toLowerCase()
@@ -69,10 +80,13 @@ function getStatusClasses(status: string) {
   switch (status) {
     case "DELIVERED":
       return "bg-green-100 text-green-800"
+
     case "CANCELLED":
       return "bg-red-100 text-red-800"
+
     case "SHIPPED":
       return "bg-blue-100 text-blue-800"
+
     default:
       return "bg-amber-100 text-amber-800"
   }
@@ -82,47 +96,49 @@ export default function PaymentConfirmation({
   orderId,
   fallbackOrderNumber,
 }: PaymentConfirmationProps) {
+  const { clearCart } = useCart()
+
   const [order, setOrder] =
     useState<OrderDetails | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [pollAttempts, setPollAttempts] = useState(0)
+
+  const [isLoading, setIsLoading] =
+    useState(true)
+
+  const [error, setError] =
+    useState("")
+
+  const [pollAttempts, setPollAttempts] =
+    useState(0)
 
   const loadOrder = useCallback(async () => {
     if (!orderId) {
       setError(
         "The payment return link does not contain a valid order ID."
       )
+
       setIsLoading(false)
       return
     }
 
     try {
-        console.log("====================================")
-  console.log("Loading order:", orderId)
-  console.log(
-    "Fetching:",
-    `/api/orders/${encodeURIComponent(orderId)}`
-  )
       const response = await fetch(
-        `/api/orders/${encodeURIComponent(orderId)}`,
+        `/api/orders/${encodeURIComponent(
+          orderId
+        )}`,
         {
           method: "GET",
           cache: "no-store",
         }
       )
-      console.log(
-  "Response received:",
-  response.status,
-  response.statusText
-)
 
       const result =
         (await response.json()) as OrderResponse
 
-        console.log("API Response:", result)
-
-      if (!response.ok || !result.success || !result.order) {
+      if (
+        !response.ok ||
+        !result.success ||
+        !result.order
+      ) {
         throw new Error(
           result.message ||
             "We could not retrieve your order."
@@ -132,16 +148,19 @@ export default function PaymentConfirmation({
       setOrder(result.order)
       setError("")
     } catch (error) {
-  console.error("Payment confirmation failed:", error)
+      console.error(
+        "Payment confirmation failed:",
+        error
+      )
+
       setError(
         error instanceof Error
           ? error.message
           : "We could not retrieve your order."
       )
     } finally {
-  console.log("Finished loading order")
-  setIsLoading(false)
-}
+      setIsLoading(false)
+    }
   }, [orderId])
 
   useEffect(() => {
@@ -159,25 +178,56 @@ export default function PaymentConfirmation({
     }
 
     const timer = window.setTimeout(() => {
-      setPollAttempts((current) => current + 1)
+      setPollAttempts(
+        (current) => current + 1
+      )
+
       void loadOrder()
     }, POLL_INTERVAL_MS)
 
-    return () => window.clearTimeout(timer)
-  }, [loadOrder, order, pollAttempts])
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [
+    loadOrder,
+    order,
+    pollAttempts,
+  ])
+
+  /*
+   * Only clear the local cart after the
+   * database confirms that PayFast marked
+   * the order as paid.
+   */
+  useEffect(() => {
+    if (order?.paymentStatus === "PAID") {
+      clearCart()
+    }
+  }, [
+    order?.paymentStatus,
+    clearCart,
+  ])
 
   if (isLoading) {
     return (
-      <section className="min-h-[70vh] bg-gray-50 px-4 py-16">
+      <section
+        className="min-h-[70vh] bg-gray-50 px-4 py-16"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-950" />
+          <div
+            className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-950"
+            aria-hidden="true"
+          />
 
           <h1 className="mt-6 text-2xl font-bold text-gray-950">
             Checking your payment
           </h1>
 
           <p className="mt-3 text-gray-600">
-            Please wait while we retrieve your order.
+            Please wait while we retrieve
+            your order.
           </p>
         </div>
       </section>
@@ -188,7 +238,10 @@ export default function PaymentConfirmation({
     return (
       <section className="min-h-[70vh] bg-gray-50 px-4 py-16">
         <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-2xl font-bold text-red-700">
+          <div
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-2xl font-bold text-red-700"
+            aria-hidden="true"
+          >
             !
           </div>
 
@@ -196,13 +249,17 @@ export default function PaymentConfirmation({
             We could not confirm your order
           </h1>
 
-          <p className="mt-3 text-gray-600">
+          <p
+            className="mt-3 text-gray-600"
+            role="alert"
+          >
             {error}
           </p>
 
           {fallbackOrderNumber && (
             <p className="mt-3 text-sm text-gray-500">
-              Order reference: {fallbackOrderNumber}
+              Order reference:{" "}
+              {fallbackOrderNumber}
             </p>
           )}
 
@@ -214,14 +271,14 @@ export default function PaymentConfirmation({
                 setError("")
                 void loadOrder()
               }}
-              className="inline-flex items-center justify-center rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800"
+              className="inline-flex items-center justify-center rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
             >
               Try again
             </button>
 
             <Link
               href="/account/orders"
-              className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-900 transition hover:bg-gray-50"
+              className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
             >
               View my orders
             </Link>
@@ -231,15 +288,22 @@ export default function PaymentConfirmation({
     )
   }
 
-  const isPaid = order.paymentStatus === "PAID"
-  const isCancelled = order.orderStatus === "CANCELLED"
+  const isPaid =
+    order.paymentStatus === "PAID"
+
+  const isCancelled =
+    order.orderStatus === "CANCELLED"
+
   const isStillChecking =
     !isPaid &&
     !isCancelled &&
     pollAttempts < MAX_POLL_ATTEMPTS
 
   return (
-    <section className="min-h-[70vh] bg-gray-50 px-4 py-12 sm:py-16">
+    <section
+      className="min-h-[70vh] bg-gray-50 px-4 py-12 sm:py-16"
+      aria-live="polite"
+    >
       <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
         <div className="px-6 py-10 text-center sm:px-10">
           <div
@@ -250,8 +314,13 @@ export default function PaymentConfirmation({
                   ? "bg-red-100 text-red-700"
                   : "bg-amber-100 text-amber-700"
             }`}
+            aria-hidden="true"
           >
-            {isPaid ? "✓" : isCancelled ? "×" : "…"}
+            {isPaid
+              ? "✓"
+              : isCancelled
+                ? "×"
+                : "…"}
           </div>
 
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-gray-950">
@@ -272,18 +341,27 @@ export default function PaymentConfirmation({
 
           {isStillChecking && (
             <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+              <span
+                className="h-2 w-2 animate-pulse rounded-full bg-amber-500"
+                aria-hidden="true"
+              />
+
               Checking payment automatically
             </div>
           )}
 
           {!isPaid &&
             !isCancelled &&
-            pollAttempts >= MAX_POLL_ATTEMPTS && (
-              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                Payment confirmation is taking longer than
-                expected. Your order remains saved, and you can
-                check its status from your account.
+            pollAttempts >=
+              MAX_POLL_ATTEMPTS && (
+              <div
+                className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
+                role="status"
+              >
+                Payment confirmation is taking
+                longer than expected. Your order
+                remains saved, and you can check
+                its status from your account.
               </div>
             )}
         </div>
@@ -294,6 +372,7 @@ export default function PaymentConfirmation({
               <p className="text-sm text-gray-500">
                 Order number
               </p>
+
               <p className="mt-1 font-semibold text-gray-950">
                 {order.orderNumber}
               </p>
@@ -303,6 +382,7 @@ export default function PaymentConfirmation({
               <p className="text-sm text-gray-500">
                 Order total
               </p>
+
               <p className="mt-1 font-semibold text-gray-950">
                 {formatPrice(order.total)}
               </p>
@@ -312,8 +392,11 @@ export default function PaymentConfirmation({
               <p className="text-sm text-gray-500">
                 Payment status
               </p>
+
               <p className="mt-1 font-semibold text-gray-950">
-                {isPaid ? "Paid" : order.paymentStatus}
+                {isPaid
+                  ? "Paid"
+                  : order.paymentStatus}
               </p>
             </div>
 
@@ -321,12 +404,15 @@ export default function PaymentConfirmation({
               <p className="text-sm text-gray-500">
                 Delivery progress
               </p>
+
               <span
                 className={`mt-2 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${getStatusClasses(
                   order.orderStatus
                 )}`}
               >
-                {getOrderStatusLabel(order.orderStatus)}
+                {getOrderStatusLabel(
+                  order.orderStatus
+                )}
               </span>
             </div>
           </div>
@@ -339,19 +425,25 @@ export default function PaymentConfirmation({
 
           <address className="mt-3 not-italic leading-7 text-gray-600">
             <span className="block">
-              {order.firstName} {order.lastName}
+              {order.firstName}{" "}
+              {order.lastName}
             </span>
+
             <span className="block">
               {order.addressLine1}
             </span>
+
             {order.addressLine2 && (
               <span className="block">
                 {order.addressLine2}
               </span>
             )}
+
             <span className="block">
-              {order.city}, {order.province}
+              {order.city},{" "}
+              {order.province}
             </span>
+
             <span className="block">
               {order.postalCode}
             </span>
@@ -361,23 +453,25 @@ export default function PaymentConfirmation({
             <p className="font-semibold text-gray-950">
               Local Paarl delivery
             </p>
+
             <p className="mt-1 text-sm leading-6 text-gray-600">
-              Your order will be prepared for local delivery.
-              Delivery updates will appear in your account.
+              Your order will be prepared for
+              local delivery. Delivery updates
+              will appear in your account.
             </p>
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href={`/account/orders/${order.id}`}
-              className="inline-flex flex-1 items-center justify-center rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800"
+              className="inline-flex flex-1 items-center justify-center rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
             >
               View my order
             </Link>
 
             <Link
               href="/products"
-              className="inline-flex flex-1 items-center justify-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-900 transition hover:bg-gray-50"
+              className="inline-flex flex-1 items-center justify-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-900 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
             >
               Continue shopping
             </Link>
