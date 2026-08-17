@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import AuthProvider from "@/components/auth/AuthProvider"
 import { CartProvider } from "@/components/cart/CartProvider"
 import Header from "@/components/layout/Header"
 
@@ -7,10 +8,11 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: {
-    default: "Meka.WC",
-    template: "%s | Meka.WC",
+    default: "MekaWC",
+    template: "%s | MekaWC",
   },
-  description: "Shop clothing and lifestyle products from Meka.WC.",
+  description:
+    "Shop clothing and lifestyle products from MekaWC.",
 }
 
 type RootLayoutProps = Readonly<{
@@ -21,15 +23,22 @@ export default function RootLayout({
   children,
 }: RootLayoutProps) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+    >
       <body className="bg-gray-50 antialiased">
-        <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
+        <AuthProvider>
+          <CartProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
 
-            <main className="flex-1">{children}</main>
-          </div>
-        </CartProvider>
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   )

@@ -2,10 +2,15 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 import { useCart } from "@/components/cart/CartProvider"
 
 export default function CartPage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
+
   const {
     items,
     subtotal,
@@ -19,6 +24,21 @@ export default function CartPage() {
     style: "currency",
     currency: "ZAR",
   }).format(subtotal)
+
+  const handleCheckout = () => {
+    if (status === "loading") {
+      return
+    }
+
+    if (!session?.user) {
+      router.push(
+        `/login?callbackUrl=${encodeURIComponent("/checkout")}`
+      )
+      return
+    }
+
+    router.push("/checkout")
+  }
 
   if (items.length === 0) {
     return (
@@ -34,7 +54,7 @@ export default function CartPage() {
 
           <Link
             href="/products"
-            className="mt-8 inline-flex rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800"
+            className="btn-primary mt-8"
           >
             Continue shopping
           </Link>
@@ -69,10 +89,14 @@ export default function CartPage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-4">
             {items.map((item) => {
-              const itemTotal = item.price * item.quantity
+              const itemTotal =
+                item.price * item.quantity
+
               const hasReachedStockLimit =
                 item.quantity >= item.stock
-              const isOutOfStock = item.stock <= 0
+
+              const isOutOfStock =
+                item.stock <= 0
 
               return (
                 <article
@@ -108,10 +132,13 @@ export default function CartPage() {
                       </Link>
 
                       <p className="mt-1 text-sm text-gray-600">
-                        {new Intl.NumberFormat("en-ZA", {
-                          style: "currency",
-                          currency: "ZAR",
-                        }).format(item.price)}
+                        {new Intl.NumberFormat(
+                          "en-ZA",
+                          {
+                            style: "currency",
+                            currency: "ZAR",
+                          }
+                        ).format(item.price)}
                       </p>
 
                       {isOutOfStock ? (
@@ -134,7 +161,9 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            decreaseQuantity(item.productId)
+                            decreaseQuantity(
+                              item.productId
+                            )
                           }
                           aria-label={`Decrease quantity of ${item.name}`}
                           className="px-3 py-2 text-lg transition hover:bg-gray-100"
@@ -149,14 +178,18 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            increaseQuantity(item.productId)
+                            increaseQuantity(
+                              item.productId
+                            )
                           }
                           disabled={
-                            hasReachedStockLimit || isOutOfStock
+                            hasReachedStockLimit ||
+                            isOutOfStock
                           }
                           aria-label={`Increase quantity of ${item.name}`}
                           className={`px-3 py-2 text-lg transition ${
-                            hasReachedStockLimit || isOutOfStock
+                            hasReachedStockLimit ||
+                            isOutOfStock
                               ? "cursor-not-allowed text-gray-300"
                               : "hover:bg-gray-100"
                           }`}
@@ -167,16 +200,21 @@ export default function CartPage() {
 
                       <div className="text-right">
                         <p className="font-semibold text-gray-950">
-                          {new Intl.NumberFormat("en-ZA", {
-                            style: "currency",
-                            currency: "ZAR",
-                          }).format(itemTotal)}
+                          {new Intl.NumberFormat(
+                            "en-ZA",
+                            {
+                              style: "currency",
+                              currency: "ZAR",
+                            }
+                          ).format(itemTotal)}
                         </p>
 
                         <button
                           type="button"
                           onClick={() =>
-                            removeItem(item.productId)
+                            removeItem(
+                              item.productId
+                            )
                           }
                           className="mt-1 text-sm text-red-600 hover:text-red-700"
                         >
@@ -208,16 +246,28 @@ export default function CartPage() {
             <p className="mt-4 text-sm leading-6 text-gray-500">
               Shipping is calculated during checkout.
               <br />
-              Orders over <strong>R500</strong> qualify for free
-              shipping.
+              Orders over <strong>R500</strong>{" "}
+              qualify for free shipping.
             </p>
 
-            <Link
-              href="/checkout"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-gray-950 px-6 py-3 font-semibold text-white transition hover:bg-gray-800"
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={status === "loading"}
+              className="btn-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Proceed to checkout
-            </Link>
+              {status === "loading"
+                ? "Checking account..."
+                : "Proceed to checkout"}
+            </button>
+
+            {!session?.user &&
+              status !== "loading" && (
+                <p className="mt-3 text-center text-xs leading-5 text-gray-500">
+                  You will be asked to sign in
+                  before completing your order.
+                </p>
+              )}
 
             <Link
               href="/products"

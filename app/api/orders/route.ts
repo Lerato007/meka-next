@@ -56,7 +56,9 @@ function createOrderNumber() {
   return `MK-${datePart}-${uniquePart}`
 }
 
-function isValidText(value: unknown): value is string {
+function isValidText(
+  value: unknown
+): value is string {
   return (
     typeof value === "string" &&
     value.trim().length > 0
@@ -66,7 +68,8 @@ function isValidText(value: unknown): value is string {
 function consolidateOrderItems(
   items: OrderItemInput[]
 ): ConsolidatedOrderItem[] {
-  const quantityByProduct = new Map<string, number>()
+  const quantityByProduct =
+    new Map<string, number>()
 
   for (const item of items) {
     const currentQuantity =
@@ -89,10 +92,33 @@ function consolidateOrderItems(
 
 export async function POST(request: Request) {
   try {
+    /*
+     * Authentication is enforced at the API level.
+     *
+     * Protecting /checkout alone is not sufficient
+     * because a client could call this endpoint
+     * directly.
+     */
+    const session = await auth()
+
+    if (
+      !session?.user?.id ||
+      !session.user.email
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "You must be signed in to place an order.",
+        },
+        {
+          status: 401,
+        }
+      )
+    }
+
     const body =
       (await request.json()) as Partial<CreateOrderInput>
-
-    const session = await auth()
 
     if (
       !isValidText(body.firstName) ||
@@ -155,223 +181,368 @@ export async function POST(request: Request) {
       firstName: body.firstName.trim(),
       lastName: body.lastName.trim(),
       email: body.email.trim().toLowerCase(),
-      phone: body.phone.replace(/[\s()-]/g, ""),
-      addressLine1: body.addressLine1.trim(),
+      phone: body.phone.replace(
+        /[\s()-]/g,
+        ""
+      ),
+      addressLine1:
+        body.addressLine1.trim(),
       addressLine2:
-        body.addressLine2?.trim() || undefined,
+        body.addressLine2?.trim() ||
+        undefined,
       city: body.city.trim(),
       province: body.province.trim(),
       postalCode: body.postalCode.trim(),
       items: body.items,
     }
 
-    const consolidatedItems =
-      consolidateOrderItems(validatedOrder.items)
+    /*
+     * Orders must belong to the authenticated
+     * account.
+     *
+     * This prevents a signed-in customer from
+     * submitting an order using another account's
+     * email address.
+     */
+    const authenticatedEmail =
+      session.user.email
+        .trim()
+        .toLowerCase()
 
-    const order = await prisma.$transaction(
-      async (transaction) => {
-        const productIds = consolidatedItems.map(
-          (item) => item.productId
-        )
-
-        const products =
-          await transaction.product.findMany({
-            where: {
-              id: {
-                in: productIds,
-              },
-            },
-            include: {
-              images: {
-                orderBy: {
-                  order: "asc",
-                },
-                take: 1,
-              },
-            },
-          })
-
-        if (products.length !== productIds.length) {
-          throw new OrderValidationError(
-            "One or more products are no longer available. Please refresh your cart."
-          )
+    if (
+      validatedOrder.email !==
+      authenticatedEmail
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "The checkout email must match your signed-in account.",
+        },
+        {
+          status: 403,
         }
+      )
+    }
 
-        const productMap = new Map(
-          products.map((product) => [
-            product.id,
-            product,
-          ])
-        )
+    /*
+     * Verify that the authenticated user still
+     * exists in the database before creating the
+     * order.
+     */
+    const customer =
+  await prisma.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      id: true,
+      email: true,
+    },
+  })
 
-        const calculatedItems =
-          consolidatedItems.map((item) => {
-            const product = productMap.get(
-              item.productId
+if (!customer) {
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        "Your account could not be found. Please sign in again.",
+    },
+    {
+      status: 401,
+    }
+  )
+}
+
+if (
+  !customer.email ||
+  customer.email.toLowerCase() !== authenticatedEmail
+) {
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        "Your account information could not be verified. Please sign in again.",
+    },
+    {
+      status: 401,
+    }
+  )
+}
+
+    const consolidatedItems =
+      consolidateOrderItems(
+        validatedOrder.items
+      )
+
+    const order =
+      await prisma.$transaction(
+        async (transaction) => {
+          const productIds =
+            consolidatedItems.map(
+              (item) => item.productId
             )
 
-            if (!product) {
-              throw new OrderValidationError(
-                "One or more products could not be found."
-              )
-            }
-
-            if (product.stock <= 0) {
-              throw new OrderValidationError(
-                `${product.name} is currently out of stock.`
-              )
-            }
-
-            if (item.quantity > product.stock) {
-              throw new OrderValidationError(
-                `Only ${product.stock} ${
-                  product.stock === 1
-                    ? "unit"
-                    : "units"
-                } of ${product.name} ${
-                  product.stock === 1
-                    ? "is"
-                    : "are"
-                } available.`
-              )
-            }
-
-            const price = Number(product.price)
-
-            return {
-              productId: product.id,
-              name: product.name,
-              price,
-              quantity: item.quantity,
-              imageUrl:
-                product.images[0]?.url ?? null,
-              lineTotal:
-                price * item.quantity,
-            }
-          })
-
-        const subtotal = calculatedItems.reduce(
-          (total, item) =>
-            total + item.lineTotal,
-          0
-        )
-
-        const shipping =
-          subtotal >= FREE_SHIPPING_THRESHOLD
-            ? 0
-            : SHIPPING_FEE
-
-        const total = subtotal + shipping
-
-        /*
-         * Atomically decrement each product.
-         *
-         * The `stock >= quantity` condition protects
-         * against another customer purchasing the
-         * remaining units at the same time.
-         */
-        for (const item of calculatedItems) {
-          const stockUpdate =
-            await transaction.product.updateMany({
+          const products =
+            await transaction.product.findMany({
               where: {
-                id: item.productId,
-                stock: {
-                  gte: item.quantity,
+                id: {
+                  in: productIds,
                 },
               },
-              data: {
-                stock: {
-                  decrement: item.quantity,
+              include: {
+                images: {
+                  orderBy: {
+                    order: "asc",
+                  },
+                  take: 1,
                 },
               },
             })
 
-          if (stockUpdate.count !== 1) {
-            const latestProduct =
-              await transaction.product.findUnique({
-                where: {
-                  id: item.productId,
-                },
-                select: {
-                  name: true,
-                  stock: true,
-                },
-              })
-
-            if (!latestProduct) {
-              throw new OrderValidationError(
-                "A product in your cart is no longer available."
-              )
-            }
-
-            if (latestProduct.stock <= 0) {
-              throw new OrderValidationError(
-                `${latestProduct.name} has just sold out. Please remove it from your cart.`
-              )
-            }
-
+          if (
+            products.length !==
+            productIds.length
+          ) {
             throw new OrderValidationError(
-              `Only ${latestProduct.stock} ${
-                latestProduct.stock === 1
-                  ? "unit"
-                  : "units"
-              } of ${latestProduct.name} ${
-                latestProduct.stock === 1
-                  ? "is"
-                  : "are"
-              } still available.`
+              "One or more products are no longer available. Please refresh your cart."
             )
           }
-        }
 
-        return transaction.order.create({
-          data: {
-            orderNumber: createOrderNumber(),
+          const productMap = new Map(
+            products.map((product) => [
+              product.id,
+              product,
+            ])
+          )
 
-            userId: session?.user?.id ?? null,
+          const calculatedItems =
+            consolidatedItems.map(
+              (item) => {
+                const product =
+                  productMap.get(
+                    item.productId
+                  )
 
-            firstName: validatedOrder.firstName,
-            lastName: validatedOrder.lastName,
-            email: validatedOrder.email,
-            phone: validatedOrder.phone,
+                if (!product) {
+                  throw new OrderValidationError(
+                    "One or more products could not be found."
+                  )
+                }
 
-            addressLine1:
-              validatedOrder.addressLine1,
-            addressLine2:
-              validatedOrder.addressLine2 || null,
-            city: validatedOrder.city,
-            province: validatedOrder.province,
-            postalCode: validatedOrder.postalCode,
+                if (product.stock <= 0) {
+                  throw new OrderValidationError(
+                    `${product.name} is currently out of stock.`
+                  )
+                }
 
-            subtotal: subtotal.toFixed(2),
-            shipping: shipping.toFixed(2),
-            total: total.toFixed(2),
-            expiresAt: new Date(
-  Date.now() + ORDER_RESERVATION_MINUTES * 60 * 1000
-),
+                if (
+                  item.quantity >
+                  product.stock
+                ) {
+                  throw new OrderValidationError(
+                    `Only ${product.stock} ${
+                      product.stock === 1
+                        ? "unit"
+                        : "units"
+                    } of ${product.name} ${
+                      product.stock === 1
+                        ? "is"
+                        : "are"
+                    } available.`
+                  )
+                }
 
-            items: {
-              create: calculatedItems.map(
-                (item) => ({
-                  productId: item.productId,
-                  name: item.name,
-                  price: item.price.toFixed(2),
+                const price =
+                  Number(product.price)
+
+                return {
+                  productId: product.id,
+                  name: product.name,
+                  price,
                   quantity: item.quantity,
-                  imageUrl: item.imageUrl,
-                })
+                  imageUrl:
+                    product.images[0]
+                      ?.url ?? null,
+                  lineTotal:
+                    price *
+                    item.quantity,
+                }
+              }
+            )
+
+          const subtotal =
+            calculatedItems.reduce(
+              (total, item) =>
+                total +
+                item.lineTotal,
+              0
+            )
+
+          const shipping =
+            subtotal >=
+            FREE_SHIPPING_THRESHOLD
+              ? 0
+              : SHIPPING_FEE
+
+          const total =
+            subtotal + shipping
+
+          /*
+           * Atomically reserve stock.
+           *
+           * updateMany with stock >= quantity
+           * prevents overselling when two
+           * customers attempt to buy the final
+           * units simultaneously.
+           */
+          for (
+            const item of calculatedItems
+          ) {
+            const stockUpdate =
+              await transaction.product.updateMany(
+                {
+                  where: {
+                    id: item.productId,
+                    stock: {
+                      gte: item.quantity,
+                    },
+                  },
+                  data: {
+                    stock: {
+                      decrement:
+                        item.quantity,
+                    },
+                  },
+                }
+              )
+
+            if (
+              stockUpdate.count !== 1
+            ) {
+              const latestProduct =
+                await transaction.product.findUnique(
+                  {
+                    where: {
+                      id: item.productId,
+                    },
+                    select: {
+                      name: true,
+                      stock: true,
+                    },
+                  }
+                )
+
+              if (!latestProduct) {
+                throw new OrderValidationError(
+                  "A product in your cart is no longer available."
+                )
+              }
+
+              if (
+                latestProduct.stock <= 0
+              ) {
+                throw new OrderValidationError(
+                  `${latestProduct.name} has just sold out. Please remove it from your cart.`
+                )
+              }
+
+              throw new OrderValidationError(
+                `Only ${
+                  latestProduct.stock
+                } ${
+                  latestProduct.stock ===
+                  1
+                    ? "unit"
+                    : "units"
+                } of ${
+                  latestProduct.name
+                } ${
+                  latestProduct.stock ===
+                  1
+                    ? "is"
+                    : "are"
+                } still available.`
+              )
+            }
+          }
+
+          return transaction.order.create({
+            data: {
+              orderNumber:
+                createOrderNumber(),
+
+              /*
+               * userId can no longer be null.
+               * Every new order belongs to the
+               * authenticated customer.
+               */
+              userId: customer.id,
+
+              firstName:
+                validatedOrder.firstName,
+              lastName:
+                validatedOrder.lastName,
+              email:
+                authenticatedEmail,
+              phone:
+                validatedOrder.phone,
+
+              addressLine1:
+                validatedOrder.addressLine1,
+              addressLine2:
+                validatedOrder.addressLine2 ||
+                null,
+              city:
+                validatedOrder.city,
+              province:
+                validatedOrder.province,
+              postalCode:
+                validatedOrder.postalCode,
+
+              subtotal:
+                subtotal.toFixed(2),
+              shipping:
+                shipping.toFixed(2),
+              total:
+                total.toFixed(2),
+
+              expiresAt: new Date(
+                Date.now() +
+                  ORDER_RESERVATION_MINUTES *
+                    60 *
+                    1000
               ),
+
+              items: {
+                create:
+                  calculatedItems.map(
+                    (item) => ({
+                      productId:
+                        item.productId,
+                      name: item.name,
+                      price:
+                        item.price.toFixed(
+                          2
+                        ),
+                      quantity:
+                        item.quantity,
+                      imageUrl:
+                        item.imageUrl,
+                    })
+                  ),
+              },
             },
-          },
-          select: {
-            id: true,
-            orderNumber: true,
-            total: true,
-            paymentStatus: true,
-            orderStatus: true,
-          },
-        })
-      }
-    )
+            select: {
+              id: true,
+              orderNumber: true,
+              total: true,
+              paymentStatus: true,
+              orderStatus: true,
+            },
+          })
+        }
+      )
 
     return NextResponse.json(
       {
@@ -388,7 +559,10 @@ export async function POST(request: Request) {
       }
     )
   } catch (error) {
-    if (error instanceof OrderValidationError) {
+    if (
+      error instanceof
+      OrderValidationError
+    ) {
       return NextResponse.json(
         {
           success: false,
