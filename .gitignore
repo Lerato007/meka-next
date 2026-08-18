@@ -45,3 +45,12 @@ next-env.d.ts
 prisma/*.db
 
 /src/generated/prisma
+
+# Local development / AI tooling
+.agents/
+.claude/
+.windsurf/
+.vscode/
+AGENTS.md
+CLAUDE.md
+skills-lock.json
