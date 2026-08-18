@@ -4,6 +4,7 @@ import Link from "next/link"
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react"
 
@@ -97,6 +98,7 @@ export default function PaymentConfirmation({
   fallbackOrderNumber,
 }: PaymentConfirmationProps) {
   const { clearCart } = useCart()
+  const hasClearedCartRef = useRef(false)
 
   const [order, setOrder] =
     useState<OrderDetails | null>(null)
@@ -200,13 +202,16 @@ export default function PaymentConfirmation({
    * the order as paid.
    */
   useEffect(() => {
-    if (order?.paymentStatus === "PAID") {
-      clearCart()
-    }
-  }, [
-    order?.paymentStatus,
-    clearCart,
-  ])
+  if (
+    order?.paymentStatus !== "PAID" ||
+    hasClearedCartRef.current
+  ) {
+    return
+  }
+
+  hasClearedCartRef.current = true
+  clearCart()
+}, [order?.paymentStatus, clearCart])
 
   if (isLoading) {
     return (
