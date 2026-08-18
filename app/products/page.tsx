@@ -291,7 +291,7 @@ export default async function ProductsPage({
               found
             </p>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 justify-center gap-6 sm:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,280px))]">
               {products.map((product) => {
                 const primaryImage = product.images[0]
 
