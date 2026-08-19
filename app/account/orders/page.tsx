@@ -179,7 +179,7 @@ export default async function OrdersPage({
       <section className="mx-auto max-w-7xl">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <PageHeader
-            eyebrow="My Meka.WC account"
+            eyebrow="My MekaWC account"
             title="My orders"
             description="View and track all the orders you have placed."
             actionLabel="Back to account"

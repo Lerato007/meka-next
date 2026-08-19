@@ -41,7 +41,7 @@ export default function OfficialLanding() {
         <div className="mx-auto grid min-h-[680px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
           <div className="max-w-xl">
             <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-500">
-              Meka.WC official collection
+              MekaWC official collection
             </p>
 
             <h1 className="mt-5 text-5xl font-black tracking-tight text-gray-950 sm:text-6xl">
@@ -76,7 +76,7 @@ export default function OfficialLanding() {
 
             <Image
               src="/mekalogo.png"
-              alt="Meka.WC"
+              alt="MekaWC"
               width={420}
               height={420}
               priority
@@ -110,7 +110,7 @@ export default function OfficialLanding() {
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             <CategoryCard
               title="New arrivals"
-              description="Explore the newest products available from Meka.WC."
+              description="Explore the newest products available from MekaWC."
               href="/products?sort=newest"
             />
 
@@ -133,7 +133,7 @@ export default function OfficialLanding() {
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-bold uppercase tracking-widest text-gray-500">
-              Why Meka.WC
+              Why MekaWC
             </p>
 
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">
@@ -179,7 +179,7 @@ export default function OfficialLanding() {
           </h2>
 
           <p className="mx-auto mt-5 max-w-2xl leading-7 text-white/70">
-            Browse the Meka.WC collection, save your favourites
+            Browse the MekaWC collection, save your favourites
             and enjoy secure online checkout.
           </p>
 

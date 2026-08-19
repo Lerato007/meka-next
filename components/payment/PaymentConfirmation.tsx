@@ -338,10 +338,10 @@ export default function PaymentConfirmation({
 
           <p className="mt-3 text-gray-600">
             {isPaid
-              ? `Thank you for shopping with Meka.WC, ${order.firstName}.`
+              ? `Thank you for shopping with MekaWC, ${order.firstName}.`
               : isCancelled
                 ? "This order has been cancelled."
-                : "PayFast returned you to Meka.WC. We are waiting for final payment confirmation."}
+                : "PayFast returned you to MekaWC. We are waiting for final payment confirmation."}
           </p>
 
           {isStillChecking && (

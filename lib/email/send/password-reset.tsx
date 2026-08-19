@@ -61,7 +61,7 @@ export async function sendPasswordResetEmail({
   const { data, error } = await resend.emails.send({
     from: emailFrom,
     to: cleanEmail,
-    subject: "Reset your Meka.WC password",
+    subject: "Reset your MekaWC password",
     react: (
       <PasswordResetEmail
         name={name}

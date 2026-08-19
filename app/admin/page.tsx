@@ -141,7 +141,7 @@ export default async function AdminPage() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Meka WC administration
+                MekaWC administration
               </p>
 
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-950">

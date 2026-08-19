@@ -34,7 +34,7 @@ export default async function AdminCategoriesPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Meka WC administration
+              MekaWC administration
             </p>
 
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-950">

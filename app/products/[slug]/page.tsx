@@ -78,10 +78,10 @@ export async function generateMetadata({
 
     openGraph: {
       type: "website",
-      title: `${product.name} | Meka.WC`,
+      title: `${product.name} | MekaWC`,
       description,
       url: productUrl,
-      siteName: "Meka.WC",
+      siteName: "MekaWC",
       locale: "en_ZA",
       images: [
         {
@@ -93,7 +93,7 @@ export async function generateMetadata({
 
     twitter: {
       card: "summary_large_image",
-      title: `${product.name} | Meka.WC`,
+      title: `${product.name} | MekaWC`,
       description,
       images: [productImage],
     },
@@ -194,7 +194,7 @@ export default async function ProductDetailsPage({
 
     brand: {
       "@type": "Brand",
-      name: "Meka.WC",
+      name: "MekaWC",
     },
 
     offers: {

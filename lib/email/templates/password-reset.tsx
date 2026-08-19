@@ -23,12 +23,12 @@ export default function PasswordResetEmail({
     <Html lang="en">
       <Head />
 
-      <Preview>Reset your Meka.WC password</Preview>
+      <Preview>Reset your MekaWC password</Preview>
 
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={brand}>Meka.WC</Text>
+            <Text style={brand}>MekaWC</Text>
           </Section>
 
           <Section style={content}>
@@ -42,7 +42,7 @@ export default function PasswordResetEmail({
 
             <Text style={paragraph}>
               We received a request to reset the password for
-              your Meka.WC account.
+              your MekaWC account.
             </Text>
 
             <Text style={paragraph}>
@@ -70,7 +70,7 @@ export default function PasswordResetEmail({
           <Section style={footer}>
             <Text style={footerText}>
               This email was sent because a password reset was
-              requested for your Meka.WC account.
+              requested for your MekaWC account.
             </Text>
           </Section>
         </Container>

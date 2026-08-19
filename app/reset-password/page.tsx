@@ -110,7 +110,7 @@ function ResetPasswordForm() {
             href="/"
             className="text-2xl font-bold tracking-tight text-gray-950"
           >
-            Meka.WC
+            MekaWC
           </Link>
 
           <h1 className="mt-6 text-2xl font-semibold text-gray-950">

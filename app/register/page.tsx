@@ -94,12 +94,12 @@ export default function RegisterPage() {
         <div className="mb-8 text-center">
   <Link
     href="/"
-    aria-label="Return to Meka.WC home"
+    aria-label="Return to MekaWC home"
     className="inline-flex flex-col items-center gap-3"
   >
     <Image
       src="/mekalogo.png"
-      alt="Meka.WC logo"
+      alt="MekaWC logo"
       width={72}
       height={72}
       priority
@@ -107,7 +107,7 @@ export default function RegisterPage() {
     />
 
     <span className="text-2xl font-bold tracking-tight text-gray-950">
-      Meka.WC
+      MekaWC
     </span>
   </Link>
 
@@ -116,7 +116,7 @@ export default function RegisterPage() {
   </h1>
 
   <p className="mt-2 text-sm text-gray-600">
-    Join Meka.WC and start shopping today.
+    Join MekaWC and start shopping today.
   </p>
 </div>
 

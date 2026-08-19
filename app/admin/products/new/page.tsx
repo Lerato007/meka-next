@@ -32,7 +32,7 @@ export default async function NewProductPage() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Meka WC administration
+              MekaWC administration
             </p>
 
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-950">

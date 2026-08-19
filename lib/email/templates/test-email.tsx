@@ -20,7 +20,7 @@ export function TestEmail({ firstName }: TestEmailProps) {
       <Head />
 
       <Preview>
-        Your Meka.WC email service is working
+        Your MekaWC email service is working
       </Preview>
 
       <Body
@@ -49,7 +49,7 @@ export function TestEmail({ firstName }: TestEmailProps) {
                 margin: "0 0 24px",
               }}
             >
-              Meka.WC
+              MekaWC
             </Heading>
 
             <Heading
@@ -80,7 +80,7 @@ export function TestEmail({ firstName }: TestEmailProps) {
                 lineHeight: "24px",
               }}
             >
-              Your Meka.WC application successfully sent
+              Your MekaWC application successfully sent
               this email through Resend.
             </Text>
 

@@ -54,7 +54,7 @@ export default async function ProfilePage({
       <section className="mx-auto max-w-5xl">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <PageHeader
-            eyebrow="My Meka.WC account"
+            eyebrow="My MekaWC account"
             title="Profile"
             description="Manage the personal information linked to your account."
             actionLabel="Back to account"
@@ -110,7 +110,7 @@ export default async function ProfilePage({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Accurate contact details help Meka.WC communicate
+                  Accurate contact details help MekaWC communicate
                   with you about payments, deliveries, and order
                   updates.
                 </p>

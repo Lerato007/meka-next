@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    "Shop clothing and lifestyle products from Meka.WC. Discover quality fashion and everyday essentials available online in South Africa.",
+    "Shop clothing and lifestyle products from MekaWC. Discover quality fashion and everyday essentials available online in South Africa.",
 
   keywords: [
     "MekaWC",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     siteName: "MekaWC",
     title: "MekaWC | Clothing & Lifestyle",
     description:
-      "Shop clothing and lifestyle products from Meka.WC.",
+      "Shop clothing and lifestyle products from MekaWC.",
     images: [
       {
         url: "/mekalogo.png",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MekaWC | Clothing & Lifestyle",
     description:
-      "Shop clothing and lifestyle products from Meka.WC.",
+      "Shop clothing and lifestyle products from MekaWC.",
     images: ["/mekalogo.png"],
   },
 

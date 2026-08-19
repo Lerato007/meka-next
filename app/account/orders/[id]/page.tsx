@@ -300,7 +300,7 @@ export default async function OrderDetailsPage({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Contact Meka.WC and include your order number so
+                  Contact MekaWC and include your order number so
                   that we can assist you quickly.
                 </p>
 

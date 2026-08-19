@@ -125,7 +125,7 @@ export function createPayFastPaymentData(input: {
     cell_number: input.phone || undefined,
     m_payment_id: input.orderId,
     amount: input.total.toFixed(2),
-    item_name: `Meka.WC order ${input.orderNumber}`,
+    item_name: `MekaWC order ${input.orderNumber}`,
     item_description: `Payment for order ${input.orderNumber}`,
   }
 

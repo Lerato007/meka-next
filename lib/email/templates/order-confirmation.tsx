@@ -90,7 +90,7 @@ export default function OrderConfirmationEmail({
                       ) : (
                         <Section style={imagePlaceholder}>
                           <Text style={imagePlaceholderText}>
-                            Meka.WC
+                            MekaWC
                           </Text>
                         </Section>
                       )}
@@ -202,7 +202,7 @@ export default function OrderConfirmationEmail({
 
           <Section style={footer}>
             <Text style={footerText}>
-              Thank you for shopping with Meka.WC.
+              Thank you for shopping with MekaWC.
             </Text>
 
             <Text style={footerText}>
