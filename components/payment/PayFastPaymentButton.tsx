@@ -109,7 +109,7 @@ export default function PayFastPaymentButton({
       </button>
 
       <p className="mt-4 text-xs leading-5 text-gray-500">
-        Sandbox mode is enabled. No real money will be charged.
+        Payments are securely processed by PayFast.
       </p>
     </div>
   )

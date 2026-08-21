@@ -48,8 +48,7 @@ export default async function PaymentPage({
         </h1>
 
         <p className="mt-3 text-gray-600">
-          You will be redirected to the PayFast sandbox to
-          complete the test transaction.
+          You will be securely redirected to PayFast to complete your payment.
         </p>
 
         <div className="mt-8 rounded-xl bg-gray-50 p-5">
