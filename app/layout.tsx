@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import AuthProvider from "@/components/auth/AuthProvider"
 import { CartProvider } from "@/components/cart/CartProvider"
+import Footer from "@/components/layout/Footer"
 import Header from "@/components/layout/Header"
 
 import "./globals.css"
@@ -106,6 +107,7 @@ export default function RootLayout({
           </CartProvider>
         </AuthProvider>
       </body>
+      <Footer />
     </html>
   )
 }
