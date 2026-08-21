@@ -1,4 +1,5 @@
 import Image from "next/image"
+import ComingSoonSlider from "@/components/landing/ComingSoonSlider"
 import Link from "next/link"
 import {
   CreditCard,
@@ -85,7 +86,7 @@ export default function OfficialLanding() {
           </div>
         </div>
       </section>
-
+<ComingSoonSlider />
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
