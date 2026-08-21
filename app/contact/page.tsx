@@ -27,7 +27,7 @@ export default function ContactPage() {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
           <a
-            href="https://wa.me/27XXXXXXXXX?text=Hi%20MekaWC%2C%20I%20need%20assistance."
+            href="https://wa.me/27815885098?text=Hi%20MekaWC%2C%20I%20need%20assistance."
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-2xl border border-gray-200 p-6 transition hover:border-gray-400"
