@@ -6,7 +6,11 @@ const isDevelopment =
 const contentSecurityPolicy = `
   default-src 'self';
   base-uri 'self';
-  form-action 'self' https://www.payfast.co.za/eng/process https://sandbox.payfast.co.za/eng/process;
+  form-action 'self'
+  https://www.payfast.co.za
+  https://*.payfast.co.za
+  https://payment.payfast.io
+  https://*.payfast.io;
   frame-ancestors 'none';
   object-src 'none';
 
