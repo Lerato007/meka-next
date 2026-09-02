@@ -34,7 +34,10 @@ function buildProductWhereClause(
 
   if (categorySlug) {
     where.category = {
-      slug: categorySlug,
+      name: {
+        equals: categorySlug,
+        mode: "insensitive",
+      },
     }
   }
 
