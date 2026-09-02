@@ -36,7 +36,8 @@ export async function POST(req: Request) {
       where: { email: email.toLowerCase() },
     });
 
-    if (!user) {
+    // Guard against both null user and null email to satisfy TypeScript type narrowing
+    if (!user || !user.email) {
       return NextResponse.json({
         message: "If an account exists, a reset link has been sent.",
       });
@@ -47,9 +48,9 @@ export async function POST(req: Request) {
 
     await prisma.passwordResetToken.create({
       data: {
-        email: user.email,
-        token,
-        expires,
+        userId: user.id,
+        tokenHash: token,
+        expiresAt: expires,
       },
     });
 

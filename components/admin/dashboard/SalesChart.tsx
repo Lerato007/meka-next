@@ -24,17 +24,18 @@ export default function SalesChart({ data }: { data: DailySalesData[] }) {
     return val.toString()
   }
 
-  const formatTooltipValue = (value: number) => {
+  const formatTooltipValue = (value: any) => {
+    const numValue = Number(value ?? 0)
     if (metric === "revenue") {
       return [
         new Intl.NumberFormat("en-ZA", {
           style: "currency",
           currency: "ZAR",
-        }).format(value),
+        }).format(numValue),
         "Revenue",
       ]
     }
-    return [`${value} orders`, "Orders"]
+    return [`${numValue} orders`, "Orders"]
   }
 
   return (
@@ -51,6 +52,7 @@ export default function SalesChart({ data }: { data: DailySalesData[] }) {
 
         <div className="inline-flex rounded-lg bg-gray-100 p-1">
           <button
+            type="button"
             onClick={() => setMetric("revenue")}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               metric === "revenue"
@@ -61,6 +63,7 @@ export default function SalesChart({ data }: { data: DailySalesData[] }) {
             Revenue (ZAR)
           </button>
           <button
+            type="button"
             onClick={() => setMetric("orders")}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               metric === "orders"
