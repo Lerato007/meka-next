@@ -1,90 +1,65 @@
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
-type RegisterBody = {
-  name?: string;
-  email?: string;
-  password?: string;
-};
+export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const { success, remaining } = await rateLimit({
+    identifier: `register_${ip}`,
+    limit: 5,
+    windowSeconds: 60,
+  });
 
-export async function POST(request: Request) {
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Please try again in a minute." },
+      {
+        status: 429,
+        headers: { "X-RateLimit-Remaining": remaining.toString() },
+      }
+    );
+  }
+
   try {
-    const body = (await request.json()) as RegisterBody;
+    const { name, email, password, phone } = await req.json();
 
-    const name = body.name?.trim();
-    const email = body.email?.trim().toLowerCase();
-    const password = body.password;
-
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Name, email and password are required.",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (password.length < 8) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Password must be at least 8 characters long.",
-        },
-        { status: 400 },
+        { error: "Email and password are required" },
+        { status: 400 }
       );
     }
 
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "An account with this email already exists.",
-        },
-        { status: 409 },
+        { error: "Email already in use" },
+        { status: 400 }
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: email.toLowerCase(),
         password: hashedPassword,
+        phone,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+      select: { id: true, name: true, email: true, role: true },
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Account created successfully.",
-        user,
-      },
-      { status: 201 },
-    );
+    return NextResponse.json(user, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "Unable to create the account.",
-      },
-      { status: 500 },
+      { error: "An unexpected error occurred" },
+      { status: 500 }
     );
   }
 }

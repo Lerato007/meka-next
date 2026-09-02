@@ -1,111 +1,72 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { prisma } from "@/lib/prisma";
+import { sendPasswordResetEmail } from "@/lib/email/send/password-reset";
+import crypto from "crypto";
 
-import { prisma } from "@/lib/prisma"
-import {
-  generatePasswordResetToken,
-} from "@/lib/auth/password-reset"
-import { sendPasswordResetEmail } from "@/lib/email/send"
+export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const { success, remaining } = await rateLimit({
+    identifier: `forgot_password_${ip}`,
+    limit: 3,
+    windowSeconds: 60,
+  });
 
-type ForgotPasswordBody = {
-  email?: unknown
-}
+  if (!success) {
+    return NextResponse.json(
+      { error: "Too many password reset requests. Please wait a minute." },
+      {
+        status: 429,
+        headers: { "X-RateLimit-Remaining": remaining.toString() },
+      }
+    );
+  }
 
-const SUCCESS_MESSAGE =
-  "If an account exists for that email address, you will receive a password reset email shortly."
-
-export async function POST(request: Request) {
   try {
-    const body =
-      (await request.json()) as ForgotPasswordBody
+    const { email } = await req.json();
 
-    if (
-      typeof body.email !== "string" ||
-      body.email.trim() === ""
-    ) {
+    if (!email) {
       return NextResponse.json(
-        {
-          success: true,
-          message: SUCCESS_MESSAGE,
-        },
-        {
-          status: 200,
-        }
-      )
+        { error: "Email is required" },
+        { status: 400 }
+      );
     }
-
-    const email = body.email.trim().toLowerCase()
 
     const user = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    })
+      where: { email: email.toLowerCase() },
+    });
 
-    /*
-     * Never reveal whether an account exists.
-     */
     if (!user) {
       return NextResponse.json({
-        success: true,
-        message: SUCCESS_MESSAGE,
-      })
+        message: "If an account exists, a reset link has been sent.",
+      });
     }
 
-    /*
-     * Remove any existing reset tokens.
-     */
-    await prisma.passwordResetToken.deleteMany({
-      where: {
-        userId: user.id,
-      },
-    })
-
-    const {
-      token,
-      tokenHash,
-      expiresAt,
-    } = generatePasswordResetToken()
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 3600000);
 
     await prisma.passwordResetToken.create({
       data: {
-        userId: user.id,
-        tokenHash,
-        expiresAt,
+        email: user.email,
+        token,
+        expires,
       },
-    })
+    });
 
     await sendPasswordResetEmail({
-      email: user.email!,
-      name: user.name,
+      email: user.email,
+      name: user.name || "Customer",
       token,
-    })
+    });
 
     return NextResponse.json({
-      success: true,
-      message: SUCCESS_MESSAGE,
-    })
+      message: "If an account exists, a reset link has been sent.",
+    });
   } catch (error) {
-    console.error(
-      "Forgot password request failed:",
-      error
-    )
-
-    /*
-     * Never leak implementation details.
-     */
+    console.error("Forgot password error:", error);
     return NextResponse.json(
-      {
-        success: true,
-        message: SUCCESS_MESSAGE,
-      },
-      {
-        status: 200,
-      }
-    )
+      { error: "Failed to process password reset request" },
+      { status: 500 }
+    );
   }
 }
