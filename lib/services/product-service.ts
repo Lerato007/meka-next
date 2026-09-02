@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+import { sendLowStockAlertEmail } from "@/lib/email/send/low-stock-alert"
 
 export type ProductSort =
   | "newest"
@@ -7,44 +9,60 @@ export type ProductSort =
   | "name-asc"
   | "name-desc"
 
-type GetProductsOptions = {
+export type GetProductsOptions = {
   categoryId?: string
+  categorySlug?: string
   search?: string
   sort?: ProductSort
+  minPrice?: number
+  maxPrice?: number
   page?: number
   pageSize?: number
 }
 
-export async function countProducts(
-  options: Pick<GetProductsOptions, "categoryId" | "search"> = {}
-) {
-  const { categoryId, search } = options
+function buildProductWhereClause(
+  options: GetProductsOptions
+): Prisma.ProductWhereInput {
+  const { categoryId, categorySlug, search, minPrice, maxPrice } = options
   const searchTerm = search?.trim()
 
-  return prisma.product.count({
-    where: {
-      ...(categoryId && {
-        categoryId,
-      }),
+  const where: Prisma.ProductWhereInput = {}
 
-      ...(searchTerm && {
-        OR: [
-          {
-            name: {
-              contains: searchTerm,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: searchTerm,
-              mode: "insensitive",
-            },
-          },
-        ],
-      }),
-    },
-  })
+  if (categoryId) {
+    where.categoryId = categoryId
+  }
+
+  if (categorySlug) {
+    where.category = {
+      slug: categorySlug,
+    }
+  }
+
+  if (searchTerm) {
+    where.OR = [
+      {
+        name: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      },
+      {
+        description: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      },
+    ]
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.price = {
+      ...(minPrice !== undefined ? { gte: minPrice } : {}),
+      ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+    }
+  }
+
+  return where
 }
 
 function getProductOrderBy(sort: ProductSort) {
@@ -76,55 +94,27 @@ function getProductOrderBy(sort: ProductSort) {
   }
 }
 
-export async function getProducts(
-  options: GetProductsOptions = {}
-) {
-  const {
-    categoryId,
-    search,
-    sort = "newest",
-    page = 1,
-    pageSize = 12,
-  } = options
+export async function countProducts(options: GetProductsOptions = {}) {
+  return prisma.product.count({
+    where: buildProductWhereClause(options),
+  })
+}
 
-  const searchTerm = search?.trim()
+export async function getProducts(options: GetProductsOptions = {}) {
+  const { sort = "newest", page = 1, pageSize = 12 } = options
 
   return prisma.product.findMany({
     skip: (page - 1) * pageSize,
-take: pageSize,
-    where: {
-      ...(categoryId && {
-        categoryId,
-      }),
-
-      ...(searchTerm && {
-        OR: [
-          {
-            name: {
-              contains: searchTerm,
-              mode: "insensitive" as const,
-            },
-          },
-          {
-            description: {
-              contains: searchTerm,
-              mode: "insensitive" as const,
-            },
-          },
-        ],
-      }),
-    },
-
+    take: pageSize,
+    where: buildProductWhereClause(options),
     include: {
       category: true,
-
       images: {
         orderBy: {
           order: "asc",
         },
       },
     },
-
     orderBy: getProductOrderBy(sort),
   })
 }
@@ -134,10 +124,8 @@ export async function getProductById(id: string) {
     where: {
       id,
     },
-
     include: {
       category: true,
-
       images: {
         orderBy: {
           order: "asc",
@@ -152,10 +140,8 @@ export async function getProductBySlug(slug: string) {
     where: {
       slug,
     },
-
     include: {
       category: true,
-
       images: {
         orderBy: {
           order: "asc",
@@ -163,4 +149,25 @@ export async function getProductBySlug(slug: string) {
       },
     },
   })
+}
+
+export async function checkAndAlertLowStock(productId: string) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      id: true,
+      name: true,
+      stock: true,
+      lowStockThreshold: true,
+    },
+  })
+
+  if (product && product.stock <= product.lowStockThreshold) {
+    await sendLowStockAlertEmail({
+      productName: product.name,
+      productId: product.id,
+      currentStock: product.stock,
+      threshold: product.lowStockThreshold,
+    })
+  }
 }
