@@ -27,12 +27,8 @@ type ProductDetailsPageProps = {
   }>
 }
 
-function createMetaDescription(
-  description: string
-) {
-  const cleanDescription = description
-    .replace(/\s+/g, " ")
-    .trim()
+function createMetaDescription(description: string) {
+  const cleanDescription = description.replace(/\s+/g, " ").trim()
 
   if (cleanDescription.length <= 155) {
     return cleanDescription
@@ -58,24 +54,16 @@ export async function generateMetadata({
     }
   }
 
-  const description = createMetaDescription(
-    product.description
-  )
-
+  const description = createMetaDescription(product.description)
   const productUrl = `/products/${product.slug}`
-
-  const productImage =
-    product.images[0]?.url ?? "/mekalogo.png"
+  const productImage = product.images[0]?.url ?? "/mekalogo.png"
 
   return {
     title: product.name,
-
     description,
-
     alternates: {
       canonical: productUrl,
     },
-
     openGraph: {
       type: "website",
       title: `${product.name} | MekaWC`,
@@ -90,14 +78,12 @@ export async function generateMetadata({
         },
       ],
     },
-
     twitter: {
       card: "summary_large_image",
       title: `${product.name} | MekaWC`,
       description,
       images: [productImage],
     },
-
     robots: {
       index: true,
       follow: true,
@@ -119,118 +105,88 @@ export default async function ProductDetailsPage({
   const session = await auth()
   const userId = session?.user?.id
 
-  const [
-    ratingSummary,
-    reviews,
-    initialWishlisted,
-    userReview,
-  ] = await Promise.all([
-    getAverageRating(product.id),
+  const [ratingSummary, reviews, initialWishlisted, userReview] =
+    await Promise.all([
+      getAverageRating(product.id),
+      getProductReviews(product.id),
+      userId
+        ? isProductInWishlist(userId, product.id)
+        : Promise.resolve(false),
+      userId
+        ? getUserReview(userId, product.id)
+        : Promise.resolve(null),
+    ])
 
-    getProductReviews(product.id),
+  const formattedPrice = new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+  }).format(Number(product.price))
 
-    userId
-      ? isProductInWishlist(
-          userId,
-          product.id
-        )
-      : Promise.resolve(false),
-
-    userId
-      ? getUserReview(
-          userId,
-          product.id
-        )
-      : Promise.resolve(null),
-  ])
-
-  const formattedPrice =
-    new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-    }).format(Number(product.price))
-
-  const isOutOfStock =
-    product.stock <= 0
-
+  const isOutOfStock = product.stock <= 0
   const isLowStock =
-    product.stock > 0 &&
-    product.stock <=
-      product.lowStockThreshold
+    product.stock > 0 && product.stock <= product.lowStockThreshold
 
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.APP_URL ||
-    "http://localhost:3000"
+    "https://www.mekawc.co.za"
 
-  const productUrl =
-    `${siteUrl}/products/${product.slug}`
-
-  const productImages =
-    product.images.map(
-      (image) => image.url
-    )
+  const productUrl = `${siteUrl}/products/${product.slug}`
+  const productImages = product.images.map((image) => image.url)
 
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-
     name: product.name,
-
-    description:
-      product.description,
-
+    description: product.description,
     sku: product.id,
-
-    category:
-      product.category.name,
-
+    category: product.category.name,
     image:
       productImages.length > 0
         ? productImages
-        : [
-            `${siteUrl}/mekalogo.png`,
-          ],
-
+        : [`${siteUrl}/mekalogo.png`],
     brand: {
       "@type": "Brand",
       name: "MekaWC",
     },
-
     offers: {
       "@type": "Offer",
-
       url: productUrl,
-
       priceCurrency: "ZAR",
-
-      price: Number(
-        product.price
-      ).toFixed(2),
-
-      availability:
-        isOutOfStock
-          ? "https://schema.org/OutOfStock"
-          : "https://schema.org/InStock",
-
-      itemCondition:
-        "https://schema.org/NewCondition",
+      price: Number(product.price).toFixed(2),
+      priceValidUntil: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000
+      )
+        .toISOString()
+        .split("T")[0],
+      availability: isOutOfStock
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: "MekaWC",
+      },
     },
-
     ...(ratingSummary.count > 0
       ? {
           aggregateRating: {
-            "@type":
-              "AggregateRating",
-
-            ratingValue:
-              ratingSummary.average.toFixed(
-                1
-              ),
-
-            reviewCount:
-              ratingSummary.count,
+            "@type": "AggregateRating",
+            ratingValue: ratingSummary.average.toFixed(1),
+            reviewCount: ratingSummary.count,
           },
+          review: reviews.map((r) => ({
+            "@type": "Review",
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: r.rating,
+            },
+            author: {
+              "@type": "Person",
+              name: r.user?.name || "Verified Customer",
+            },
+            ...(r.comment ? { reviewBody: r.comment } : {}),
+          })),
         }
       : {}),
   }
@@ -240,9 +196,10 @@ export default async function ProductDetailsPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            productJsonLd
-          ).replace(/</g, "\\u003c"),
+          __html: JSON.stringify(productJsonLd).replace(
+            /</g,
+            "\\u003c"
+          ),
         }}
       />
 
@@ -259,29 +216,20 @@ export default async function ProductDetailsPage({
               Products
             </Link>
 
-            <span aria-hidden="true">
-              /
-            </span>
+            <span aria-hidden="true">/</span>
 
-            <span className="text-gray-950">
-              {product.name}
-            </span>
+            <span className="text-gray-950">{product.name}</span>
           </nav>
 
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <ProductImageGallery
               images={product.images}
-              productName={
-                product.name
-              }
+              productName={product.name}
             />
 
             <div className="lg:py-6">
               <p className="text-sm font-semibold uppercase tracking-widest text-gray-500">
-                {
-                  product.category
-                    .name
-                }
+                {product.category.name}
               </p>
 
               <div className="mt-3 flex items-start justify-between gap-4">
@@ -290,36 +238,20 @@ export default async function ProductDetailsPage({
                 </h1>
 
                 <WishlistButton
-                  productId={
-                    product.id
-                  }
-                  initialWishlisted={
-                    initialWishlisted
-                  }
+                  productId={product.id}
+                  initialWishlisted={initialWishlisted}
                 />
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <StarRating
-                  rating={
-                    ratingSummary.average
-                  }
+                  rating={ratingSummary.average}
                   size="md"
                 />
 
                 <span className="text-sm text-gray-600">
-                  {ratingSummary.average.toFixed(
-                    1
-                  )}{" "}
-                  (
-                  {
-                    ratingSummary.count
-                  }{" "}
-                  {ratingSummary.count ===
-                  1
-                    ? "review"
-                    : "reviews"}
-                  )
+                  {ratingSummary.average.toFixed(1)} ({ratingSummary.count}{" "}
+                  {ratingSummary.count === 1 ? "review" : "reviews"})
                 </span>
               </div>
 
@@ -334,9 +266,7 @@ export default async function ProductDetailsPage({
                   </span>
                 ) : isLowStock ? (
                   <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
-                    Only{" "}
-                    {product.stock}{" "}
-                    left
+                    Only {product.stock} left
                   </span>
                 ) : (
                   <span className="inline-flex rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
@@ -349,21 +279,17 @@ export default async function ProductDetailsPage({
 
               <div>
                 <h2 className="text-lg font-semibold text-gray-950">
-                  Product
-                  description
+                  Product description
                 </h2>
 
                 <p className="mt-4 whitespace-pre-line leading-7 text-gray-600">
-                  {
-                    product.description
-                  }
+                  {product.description}
                 </p>
               </div>
 
               <div className="mt-10 rounded-xl bg-white p-5 ring-1 ring-gray-200">
                 <p className="font-semibold text-gray-950">
-                  Add this product
-                  to your cart
+                  Add this product to your cart
                 </p>
 
                 <p className="mt-1 text-sm text-gray-600">
@@ -378,19 +304,9 @@ export default async function ProductDetailsPage({
                       id: product.id,
                       name: product.name,
                       slug: product.slug,
-
-                      price: Number(
-                        product.price
-                      ),
-
-                      imageUrl:
-                        product
-                          .images[0]
-                          ?.url ??
-                        null,
-
-                      stock:
-                        product.stock,
+                      price: Number(product.price),
+                      imageUrl: product.images[0]?.url ?? null,
+                      stock: product.stock,
                     }}
                   />
                 </div>
@@ -408,21 +324,13 @@ export default async function ProductDetailsPage({
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <StarRating
-                  rating={
-                    ratingSummary.average
-                  }
+                  rating={ratingSummary.average}
                   size="lg"
                 />
 
                 <p className="text-gray-600">
-                  Based on{" "}
-                  {
-                    ratingSummary.count
-                  }{" "}
-                  {ratingSummary.count ===
-                  1
-                    ? "review"
-                    : "reviews"}
+                  Based on {ratingSummary.count}{" "}
+                  {ratingSummary.count === 1 ? "review" : "reviews"}
                 </p>
               </div>
             </div>
@@ -430,24 +338,14 @@ export default async function ProductDetailsPage({
             <div className="grid gap-10 lg:grid-cols-[minmax(0,420px)_1fr]">
               <div>
                 <ReviewForm
-                  productId={
-                    product.id
-                  }
-                  initialRating={
-                    userReview?.rating ??
-                    0
-                  }
-                  initialComment={
-                    userReview
-                      ?.comment ?? ""
-                  }
+                  productId={product.id}
+                  initialRating={userReview?.rating ?? 0}
+                  initialComment={userReview?.comment ?? ""}
                 />
               </div>
 
               <div>
-                <ReviewList
-                  reviews={reviews}
-                />
+                <ReviewList reviews={reviews} />
               </div>
             </div>
           </section>
