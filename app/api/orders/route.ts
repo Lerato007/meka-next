@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { checkAndAlertLowStock } from "@/lib/services/product-service"
 
 const SHIPPING_FEE = 100
 const FREE_SHIPPING_THRESHOLD = 500
@@ -56,69 +57,42 @@ function createOrderNumber() {
   return `MK-${datePart}-${uniquePart}`
 }
 
-function isValidText(
-  value: unknown
-): value is string {
-  return (
-    typeof value === "string" &&
-    value.trim().length > 0
-  )
+function isValidText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0
 }
 
 function consolidateOrderItems(
   items: OrderItemInput[]
 ): ConsolidatedOrderItem[] {
-  const quantityByProduct =
-    new Map<string, number>()
+  const quantityByProduct = new Map<string, number>()
 
   for (const item of items) {
-    const currentQuantity =
-      quantityByProduct.get(item.productId) ?? 0
+    const currentQuantity = quantityByProduct.get(item.productId) ?? 0
 
-    quantityByProduct.set(
-      item.productId,
-      currentQuantity + item.quantity
-    )
+    quantityByProduct.set(item.productId, currentQuantity + item.quantity)
   }
 
-  return Array.from(
-    quantityByProduct.entries(),
-    ([productId, quantity]) => ({
-      productId,
-      quantity,
-    })
-  )
+  return Array.from(quantityByProduct.entries(), ([productId, quantity]) => ({
+    productId,
+    quantity,
+  }))
 }
 
 export async function POST(request: Request) {
   try {
-    /*
-     * Authentication is enforced at the API level.
-     *
-     * Protecting /checkout alone is not sufficient
-     * because a client could call this endpoint
-     * directly.
-     */
     const session = await auth()
 
-    if (
-      !session?.user?.id ||
-      !session.user.email
-    ) {
+    if (!session?.user?.id || !session.user.email) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "You must be signed in to place an order.",
+          message: "You must be signed in to place an order.",
         },
-        {
-          status: 401,
-        }
+        { status: 401 }
       )
     }
 
-    const body =
-      (await request.json()) as Partial<CreateOrderInput>
+    const body = (await request.json()) as Partial<CreateOrderInput>
 
     if (
       !isValidText(body.firstName) ||
@@ -133,27 +107,19 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Please provide all required checkout details.",
+          message: "Please provide all required checkout details.",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       )
     }
 
-    if (
-      !Array.isArray(body.items) ||
-      body.items.length === 0
-    ) {
+    if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json(
         {
           success: false,
           message: "Your cart is empty.",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       )
     }
 
@@ -168,12 +134,9 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message:
-            "One or more cart items are invalid.",
+          message: "One or more cart items are invalid.",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       )
     }
 
@@ -181,413 +144,267 @@ export async function POST(request: Request) {
       firstName: body.firstName.trim(),
       lastName: body.lastName.trim(),
       email: body.email.trim().toLowerCase(),
-      phone: body.phone.replace(
-        /[\s()-]/g,
-        ""
-      ),
-      addressLine1:
-        body.addressLine1.trim(),
-      addressLine2:
-        body.addressLine2?.trim() ||
-        undefined,
+      phone: body.phone.replace(/[\s()-]/g, ""),
+      addressLine1: body.addressLine1.trim(),
+      addressLine2: body.addressLine2?.trim() || undefined,
       city: body.city.trim(),
       province: body.province.trim(),
       postalCode: body.postalCode.trim(),
       items: body.items,
     }
 
-    /*
-     * Orders must belong to the authenticated
-     * account.
-     *
-     * This prevents a signed-in customer from
-     * submitting an order using another account's
-     * email address.
-     */
-    const authenticatedEmail =
-      session.user.email
-        .trim()
-        .toLowerCase()
+    const authenticatedEmail = session.user.email.trim().toLowerCase()
+
+    if (validatedOrder.email !== authenticatedEmail) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "The checkout email must match your signed-in account.",
+        },
+        { status: 403 }
+      )
+    }
+
+    const customer = await prisma.user.findUnique({
+      where: {
+        id: session.user.id,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    })
+
+    if (!customer) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Your account could not be found. Please sign in again.",
+        },
+        { status: 401 }
+      )
+    }
 
     if (
-      validatedOrder.email !==
-      authenticatedEmail
+      !customer.email ||
+      customer.email.toLowerCase() !== authenticatedEmail
     ) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "The checkout email must match your signed-in account.",
+            "Your account information could not be verified. Please sign in again.",
         },
-        {
-          status: 403,
-        }
+        { status: 401 }
       )
     }
 
-    /*
-     * Verify that the authenticated user still
-     * exists in the database before creating the
-     * order.
-     */
-    const customer =
-  await prisma.user.findUnique({
-    where: {
-      id: session.user.id,
-    },
-    select: {
-      id: true,
-      email: true,
-    },
-  })
+    const consolidatedItems = consolidateOrderItems(validatedOrder.items)
 
-if (!customer) {
-  return NextResponse.json(
-    {
-      success: false,
-      message:
-        "Your account could not be found. Please sign in again.",
-    },
-    {
-      status: 401,
-    }
-  )
-}
+    const order = await prisma.$transaction(async (transaction) => {
+      const productIds = consolidatedItems.map((item) => item.productId)
 
-if (
-  !customer.email ||
-  customer.email.toLowerCase() !== authenticatedEmail
-) {
-  return NextResponse.json(
-    {
-      success: false,
-      message:
-        "Your account information could not be verified. Please sign in again.",
-    },
-    {
-      status: 401,
-    }
-  )
-}
+      const products = await transaction.product.findMany({
+        where: {
+          id: {
+            in: productIds,
+          },
+        },
+        include: {
+          images: {
+            orderBy: {
+              order: "asc",
+            },
+            take: 1,
+          },
+        },
+      })
 
-    const consolidatedItems =
-      consolidateOrderItems(
-        validatedOrder.items
+      if (products.length !== productIds.length) {
+        throw new OrderValidationError(
+          "One or more products are no longer available. Please refresh your cart."
+        )
+      }
+
+      const productMap = new Map(
+        products.map((product) => [product.id, product])
       )
 
-    const order =
-      await prisma.$transaction(
-        async (transaction) => {
-          const productIds =
-            consolidatedItems.map(
-              (item) => item.productId
-            )
+      const calculatedItems = consolidatedItems.map((item) => {
+        const product = productMap.get(item.productId)
 
-          const products =
-            await transaction.product.findMany({
-              where: {
-                id: {
-                  in: productIds,
-                },
-              },
-              include: {
-                images: {
-                  orderBy: {
-                    order: "asc",
-                  },
-                  take: 1,
-                },
-              },
-            })
-
-          if (
-            products.length !==
-            productIds.length
-          ) {
-            throw new OrderValidationError(
-              "One or more products are no longer available. Please refresh your cart."
-            )
-          }
-
-          const productMap = new Map(
-            products.map((product) => [
-              product.id,
-              product,
-            ])
+        if (!product) {
+          throw new OrderValidationError(
+            "One or more products could not be found."
           )
+        }
 
-          const calculatedItems =
-            consolidatedItems.map(
-              (item) => {
-                const product =
-                  productMap.get(
-                    item.productId
-                  )
+        if (product.stock <= 0) {
+          throw new OrderValidationError(
+            `${product.name} is currently out of stock.`
+          )
+        }
 
-                if (!product) {
-                  throw new OrderValidationError(
-                    "One or more products could not be found."
-                  )
-                }
+        if (item.quantity > product.stock) {
+          throw new OrderValidationError(
+            `Only ${product.stock} ${
+              product.stock === 1 ? "unit" : "units"
+            } of ${product.name} ${
+              product.stock === 1 ? "is" : "are"
+            } available.`
+          )
+        }
 
-                if (product.stock <= 0) {
-                  throw new OrderValidationError(
-                    `${product.name} is currently out of stock.`
-                  )
-                }
+        const price = Number(product.price)
 
-                if (
-                  item.quantity >
-                  product.stock
-                ) {
-                  throw new OrderValidationError(
-                    `Only ${product.stock} ${
-                      product.stock === 1
-                        ? "unit"
-                        : "units"
-                    } of ${product.name} ${
-                      product.stock === 1
-                        ? "is"
-                        : "are"
-                    } available.`
-                  )
-                }
+        return {
+          productId: product.id,
+          name: product.name,
+          price,
+          quantity: item.quantity,
+          imageUrl: product.images[0]?.url ?? null,
+          lineTotal: price * item.quantity,
+        }
+      })
 
-                const price =
-                  Number(product.price)
+      const subtotal = calculatedItems.reduce(
+        (total, item) => total + item.lineTotal,
+        0
+      )
 
-                return {
-                  productId: product.id,
-                  name: product.name,
-                  price,
-                  quantity: item.quantity,
-                  imageUrl:
-                    product.images[0]
-                      ?.url ?? null,
-                  lineTotal:
-                    price *
-                    item.quantity,
-                }
-              }
-            )
+      const shipping =
+        subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
 
-          const subtotal =
-            calculatedItems.reduce(
-              (total, item) =>
-                total +
-                item.lineTotal,
-              0
-            )
+      const total = subtotal + shipping
 
-          const shipping =
-            subtotal >=
-            FREE_SHIPPING_THRESHOLD
-              ? 0
-              : SHIPPING_FEE
+      for (const item of calculatedItems) {
+        const stockUpdate = await transaction.product.updateMany({
+          where: {
+            id: item.productId,
+            stock: {
+              gte: item.quantity,
+            },
+          },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        })
 
-          const total =
-            subtotal + shipping
-
-          /*
-           * Atomically reserve stock.
-           *
-           * updateMany with stock >= quantity
-           * prevents overselling when two
-           * customers attempt to buy the final
-           * units simultaneously.
-           */
-          for (
-            const item of calculatedItems
-          ) {
-            const stockUpdate =
-              await transaction.product.updateMany(
-                {
-                  where: {
-                    id: item.productId,
-                    stock: {
-                      gte: item.quantity,
-                    },
-                  },
-                  data: {
-                    stock: {
-                      decrement:
-                        item.quantity,
-                    },
-                  },
-                }
-              )
-
-            if (
-              stockUpdate.count !== 1
-            ) {
-              const latestProduct =
-                await transaction.product.findUnique(
-                  {
-                    where: {
-                      id: item.productId,
-                    },
-                    select: {
-                      name: true,
-                      stock: true,
-                    },
-                  }
-                )
-
-              if (!latestProduct) {
-                throw new OrderValidationError(
-                  "A product in your cart is no longer available."
-                )
-              }
-
-              if (
-                latestProduct.stock <= 0
-              ) {
-                throw new OrderValidationError(
-                  `${latestProduct.name} has just sold out. Please remove it from your cart.`
-                )
-              }
-
-              throw new OrderValidationError(
-                `Only ${
-                  latestProduct.stock
-                } ${
-                  latestProduct.stock ===
-                  1
-                    ? "unit"
-                    : "units"
-                } of ${
-                  latestProduct.name
-                } ${
-                  latestProduct.stock ===
-                  1
-                    ? "is"
-                    : "are"
-                } still available.`
-              )
-            }
-          }
-
-          return transaction.order.create({
-            data: {
-              orderNumber:
-                createOrderNumber(),
-
-              /*
-               * userId can no longer be null.
-               * Every new order belongs to the
-               * authenticated customer.
-               */
-              userId: customer.id,
-
-              firstName:
-                validatedOrder.firstName,
-              lastName:
-                validatedOrder.lastName,
-              email:
-                authenticatedEmail,
-              phone:
-                validatedOrder.phone,
-
-              addressLine1:
-                validatedOrder.addressLine1,
-              addressLine2:
-                validatedOrder.addressLine2 ||
-                null,
-              city:
-                validatedOrder.city,
-              province:
-                validatedOrder.province,
-              postalCode:
-                validatedOrder.postalCode,
-
-              subtotal:
-                subtotal.toFixed(2),
-              shipping:
-                shipping.toFixed(2),
-              total:
-                total.toFixed(2),
-
-              expiresAt: new Date(
-                Date.now() +
-                  ORDER_RESERVATION_MINUTES *
-                    60 *
-                    1000
-              ),
-
-              items: {
-                create:
-                  calculatedItems.map(
-                    (item) => ({
-                      productId:
-                        item.productId,
-                      name: item.name,
-                      price:
-                        item.price.toFixed(
-                          2
-                        ),
-                      quantity:
-                        item.quantity,
-                      imageUrl:
-                        item.imageUrl,
-                    })
-                  ),
-              },
+        if (stockUpdate.count !== 1) {
+          const latestProduct = await transaction.product.findUnique({
+            where: {
+              id: item.productId,
             },
             select: {
-              id: true,
-              orderNumber: true,
-              total: true,
-              paymentStatus: true,
-              orderStatus: true,
+              name: true,
+              stock: true,
             },
           })
+
+          if (!latestProduct) {
+            throw new OrderValidationError(
+              "A product in your cart is no longer available."
+            )
+          }
+
+          if (latestProduct.stock <= 0) {
+            throw new OrderValidationError(
+              `${latestProduct.name} has just sold out. Please remove it from your cart.`
+            )
+          }
+
+          throw new OrderValidationError(
+            `Only ${latestProduct.stock} ${
+              latestProduct.stock === 1 ? "unit" : "units"
+            } of ${latestProduct.name} ${
+              latestProduct.stock === 1 ? "is" : "are"
+            } still available.`
+          )
         }
+      }
+
+      return transaction.order.create({
+        data: {
+          orderNumber: createOrderNumber(),
+          userId: customer.id,
+          firstName: validatedOrder.firstName,
+          lastName: validatedOrder.lastName,
+          email: authenticatedEmail,
+          phone: validatedOrder.phone,
+          addressLine1: validatedOrder.addressLine1,
+          addressLine2: validatedOrder.addressLine2 || null,
+          city: validatedOrder.city,
+          province: validatedOrder.province,
+          postalCode: validatedOrder.postalCode,
+          subtotal: subtotal.toFixed(2),
+          shipping: shipping.toFixed(2),
+          total: total.toFixed(2),
+          expiresAt: new Date(
+            Date.now() + ORDER_RESERVATION_MINUTES * 60 * 1000
+          ),
+          items: {
+            create: calculatedItems.map((item) => ({
+              productId: item.productId,
+              name: item.name,
+              price: item.price.toFixed(2),
+              quantity: item.quantity,
+              imageUrl: item.imageUrl,
+            })),
+          },
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+          total: true,
+          paymentStatus: true,
+          orderStatus: true,
+        },
+      })
+    })
+
+    // Evaluate stock thresholds and dispatch low-stock admin alerts
+    try {
+      await Promise.allSettled(
+        consolidatedItems.map((item) =>
+          checkAndAlertLowStock(item.productId)
+        )
       )
+    } catch (alertError) {
+      console.error("Failed to process low stock alerts:", alertError)
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message:
-          "Order created successfully.",
+        message: "Order created successfully.",
         order: {
           ...order,
           total: Number(order.total),
         },
       },
-      {
-        status: 201,
-      }
+      { status: 201 }
     )
   } catch (error) {
-    if (
-      error instanceof
-      OrderValidationError
-    ) {
+    if (error instanceof OrderValidationError) {
       return NextResponse.json(
         {
           success: false,
           message: error.message,
         },
-        {
-          status: error.status,
-        }
+        { status: error.status }
       )
     }
 
-    console.error(
-      "Failed to create order:",
-      error
-    )
+    console.error("Failed to create order:", error)
 
     return NextResponse.json(
       {
         success: false,
-        message:
-          "We could not create your order. Please try again.",
+        message: "We could not create your order. Please try again.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     )
   }
 }

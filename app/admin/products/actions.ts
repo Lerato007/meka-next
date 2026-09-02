@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { checkAndAlertLowStock } from "@/lib/services/product-service"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 
 export type ProductImageFormState = {
@@ -319,6 +320,8 @@ export async function createProduct(
       name,
       images
     )
+
+    await checkAndAlertLowStock(product.id)
   } catch (error) {
     console.error("Product creation failed:", error)
 
@@ -513,6 +516,8 @@ export async function updateProduct(
         categoryId,
       },
     })
+
+    await checkAndAlertLowStock(productId)
   } catch (error) {
     console.error("Product update failed:", error)
 
