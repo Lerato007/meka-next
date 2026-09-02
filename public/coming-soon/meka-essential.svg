@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <rect width="800" height="1000" fill="#0D0D0D"/>
+  
+  <!-- Subtle Grid lines -->
+  <path d="M0 100 H800 M0 200 H800 M0 300 H800 M0 400 H800 M0 500 H800 M0 600 H800 M0 700 H800 M0 800 H800 M0 900 H800" stroke="#1A1A1A" stroke-width="1"/>
+  <path d="M100 0 V1000 M200 0 V1000 M300 0 V1000 M400 0 V1000 M500 0 V1000 M600 0 V1000 M700 0 V1000" stroke="#1A1A1A" stroke-width="1"/>
+  
+  <!-- Framing border -->
+  <rect x="50" y="50" width="700" height="900" fill="none" stroke="#262626" stroke-width="2"/>
+  
+  <!-- Header Branding -->
+  <text x="80" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#888888" letter-spacing="4">MEKAWC // F/W 2026</text>
+  <text x="720" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#888888" letter-spacing="2" text-anchor="end">CAPETOWN, ZA</text>
+  
+  <!-- Collection Title -->
+  <text x="400" y="470" font-family="Impact, system-ui, sans-serif" font-size="76" font-weight="900" fill="#FFFFFF" letter-spacing="6" text-anchor="middle">FOUR LTR</text>
+  <text x="400" y="550" font-family="Impact, system-ui, sans-serif" font-size="76" font-weight="900" fill="#E53E3E" letter-spacing="6" text-anchor="middle">WORD</text>
+  
+  <line x1="250" y1="600" x2="550" y2="600" stroke="#E53E3E" stroke-width="4"/>
+  
+  <!-- Subtext -->
+  <text x="400" y="660" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#AAAAAA" letter-spacing="8" text-anchor="middle">LIMITED CAPSULE COLLECTION</text>
+  <text x="400" y="900" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#555555" letter-spacing="4" text-anchor="middle">COMING SOON • ALL RIGHTS RESERVED</text>
+</svg>

@@ -5,17 +5,18 @@ import { auth } from "@/auth"
 import DashboardStats from "@/components/admin/dashboard/DashboardStats"
 import QuickActions from "@/components/admin/dashboard/QuickActions"
 import RecentOrdersTable from "@/components/admin/dashboard/RecentOrdersTable"
+import SalesChart from "@/components/admin/dashboard/SalesChart"
 import SignOutButton from "@/components/auth/SignOutButton"
 import { formatPrice } from "@/lib/formatPrice"
 import { prisma } from "@/lib/prisma"
+import { getDashboardAnalytics } from "@/lib/services/analytics-service"
 
 export const dynamic = "force-dynamic"
 
 function getSouthAfricaDayRange() {
   const now = new Date()
 
-  const southAfricaOffsetMilliseconds =
-    2 * 60 * 60 * 1000
+  const southAfricaOffsetMilliseconds = 2 * 60 * 60 * 1000
 
   const southAfricaNow = new Date(
     now.getTime() + southAfricaOffsetMilliseconds
@@ -62,8 +63,7 @@ export default async function AdminPage() {
     redirect("/")
   }
 
-  const { startOfDay, endOfDay } =
-    getSouthAfricaDayRange()
+  const { startOfDay, endOfDay } = getSouthAfricaDayRange()
 
   const [
     ordersToday,
@@ -71,6 +71,7 @@ export default async function AdminPage() {
     revenueTodayResult,
     products,
     recentOrders,
+    analytics,
   ] = await Promise.all([
     prisma.order.count({
       where: {
@@ -124,14 +125,14 @@ export default async function AdminPage() {
         createdAt: true,
       },
     }),
+
+    getDashboardAnalytics(),
   ])
 
-  const revenueToday =
-    revenueTodayResult._sum.total ?? 0
+  const revenueToday = revenueTodayResult._sum.total ?? 0
 
   const lowStockProducts = products.filter(
-    (product) =>
-      product.stock <= product.lowStockThreshold
+    (product) => product.stock <= product.lowStockThreshold
   ).length
 
   return (
@@ -171,6 +172,10 @@ export default async function AdminPage() {
             revenueToday={formatPrice(revenueToday)}
             lowStockProducts={lowStockProducts}
           />
+
+          <div className="my-8">
+            <SalesChart data={analytics.chartData} />
+          </div>
 
           <RecentOrdersTable orders={recentOrders} />
 
