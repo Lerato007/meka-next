@@ -1,16 +1,16 @@
+import { withSentryConfig } from "@sentry/nextjs"
 import type { NextConfig } from "next"
 
-const isDevelopment =
-  process.env.NODE_ENV === "development"
+const isDevelopment = process.env.NODE_ENV === "development"
 
 const contentSecurityPolicy = `
   default-src 'self';
   base-uri 'self';
   form-action 'self'
-  https://www.payfast.co.za
-  https://*.payfast.co.za
-  https://payment.payfast.io
-  https://*.payfast.io;
+    https://www.payfast.co.za
+    https://*.payfast.co.za
+    https://payment.payfast.io
+    https://*.payfast.io;
   frame-ancestors 'none';
   object-src 'none';
 
@@ -43,6 +43,8 @@ const contentSecurityPolicy = `
     https://*.googleapis.com
     https://*.vercel-insights.com
     https://vitals.vercel-insights.com
+    https://*.sentry.io
+    https://*.ingest.sentry.io
     ${isDevelopment ? "ws: wss:" : ""};
 
   frame-src
@@ -83,8 +85,7 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value:
-      "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   },
   {
     key: "Cross-Origin-Opener-Policy",
@@ -97,9 +98,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "peroxide-museum-bottling.ngrok-free.dev",
-  ],
+  allowedDevOrigins: ["peroxide-museum-bottling.ngrok-free.dev"],
 
   experimental: {
     serverActions: {
@@ -111,11 +110,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname:
-          "auieyynwtskqhewkcutw.supabase.co",
+        hostname: "auieyynwtskqhewkcutw.supabase.co",
         port: "",
-        pathname:
-          "/storage/v1/object/public/product-images/**",
+        pathname: "/storage/v1/object/public/product-images/**",
         search: "",
       },
     ],
@@ -131,4 +128,13 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  tunnelRoute: "/monitoring",
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+})

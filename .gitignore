@@ -54,3 +54,5 @@ prisma/*.db
 AGENTS.md
 CLAUDE.md
 skills-lock.json
+# Sentry Config File
+.env.sentry-build-plugin
