@@ -14,15 +14,25 @@ export async function sendLowStockAlertEmail({
   currentStock,
   threshold,
 }: SendLowStockAlertProps) {
-  const adminEmail =
-    process.env.ADMIN_EMAIL ||
+  const recipientEmail =
+    process.env.STORE_OWNER_EMAIL ||
+    process.env.EMAIL_TEST_RECIPIENT ||
+    process.env.ADMIN_EMAIL
+
+  const senderEmail =
+    process.env.EMAIL_FROM ||
     process.env.RESEND_FROM_EMAIL ||
-    "admin@mekawc.co.za"
+    "MekaWC <onboarding@resend.dev>"
+
+  if (!recipientEmail) {
+    console.error("⚠️ Low Stock Alert: No recipient email defined in environment variables.")
+    return
+  }
 
   try {
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || "MekaWC <orders@mekawc.co.za>",
-      to: adminEmail,
+    const data = await resend.emails.send({
+      from: senderEmail,
+      to: recipientEmail,
       subject: `⚠️ Low Stock Alert: ${productName}`,
       react: LowStockAlertEmail({
         productName,
@@ -31,6 +41,8 @@ export async function sendLowStockAlertEmail({
         threshold,
       }),
     })
+
+    console.log("Low stock alert email dispatched successfully:", data)
   } catch (error) {
     console.error("Failed to send low stock alert email:", error)
   }
