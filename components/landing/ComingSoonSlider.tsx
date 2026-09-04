@@ -18,8 +18,8 @@ const comingSoonItems: ComingSoonItem[] = [
   },
   {
     id: 2,
-    name: "MEKA Essential Crop Tee",
-    image: "/coming-soon/meka-essential.svg",
+    name: "MekaWC Signature Bucket Hat",
+    image: "/coming-soon/headwear-bucket-hat.svg",
   },
 ]
 

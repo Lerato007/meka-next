@@ -1,228 +1,247 @@
 import Image from "next/image"
-import ComingSoonSlider from "@/components/landing/ComingSoonSlider"
 import Link from "next/link"
+import ComingSoonSlider from "@/components/landing/ComingSoonSlider"
 import {
-  CreditCard,
-  PackageCheck,
+  ArrowUpRight,
+  RefreshCw,
   ShieldCheck,
-  ShoppingBag,
+  Sparkles,
+  Truck,
 } from "lucide-react"
 
-const benefits = [
+const collections = [
   {
-    title: "Secure payments",
-    description:
-      "Complete your purchase safely through PayFast.",
-    icon: ShieldCheck,
+    title: "New Drop",
+    category: "Seasonal Releases",
+    description: "Discover the latest limited-run garments and signature cuts.",
+    href: "/products?sort=newest",
   },
   {
-    title: "Quality products",
-    description:
-      "Carefully selected products designed for modern style.",
-    icon: ShoppingBag,
+    title: "Essentials",
+    category: "Heavyweight Basics",
+    description: "Engineered daily tees, hoodies, and core streetwear staples.",
+    href: "/products?category=essentials",
   },
   {
-    title: "Order tracking",
-    description:
-      "Follow your order from payment through delivery.",
-    icon: PackageCheck,
-  },
-  {
-    title: "Simple checkout",
-    description:
-      "A quick and convenient online shopping experience.",
-    icon: CreditCard,
+    title: "Accessories",
+    category: "Headwear & Gear",
+    description: "Finishing touches including signature bucket hats and caps.",
+    href: "/products?category=accessories",
   },
 ]
 
 export default function OfficialLanding() {
   return (
-    <main className="bg-white">
-      <section className="relative isolate overflow-hidden bg-stone-100">
-        <div className="mx-auto grid min-h-[680px] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
-          <div className="max-w-xl">
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-500">
-              MekaWC official collection
+    <main className="min-h-screen bg-[#fafafa] text-neutral-900 selection:bg-neutral-900 selection:text-white">
+      {/* --- TOP ANNOUNCEMENT BAR --- */}
+      <div className="border-b border-neutral-200 bg-neutral-950 px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-300">
+        Official MekaWC Store • PayFast Secure Payments • Express SA Shipping
+      </div>
+
+      {/* --- HERO SECTION --- */}
+<section className="relative border-b border-neutral-200 bg-white py-16 lg:py-24">
+  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
+      {/* Hero Copy */}
+      <div className="lg:col-span-7">
+        <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-neutral-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          2026 Collection Live
+        </div>
+
+        <h1 className="mt-6 text-5xl font-black uppercase tracking-tight text-neutral-950 sm:text-6xl lg:text-7xl">
+          Streetwear <br />
+          <span className="text-emerald-600">Refined.</span>
+        </h1>
+
+        <p className="mt-6 max-w-lg text-base leading-relaxed text-neutral-600 sm:text-lg">
+          Minimalist silhouettes, heavyweight textiles, and tailored daily fits engineered for contemporary street culture.
+        </p>
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+  <Link
+    href="/products"
+    className="inline-flex items-center rounded-full bg-neutral-950 px-8 py-4 text-xs font-bold uppercase tracking-widest text-white transition-all hover:bg-neutral-800"
+  >
+    Shop Collection
+  </Link>
+
+  <Link
+    href="/register"
+    className="inline-flex items-center rounded-full border border-neutral-300 bg-transparent px-8 py-4 text-xs font-bold uppercase tracking-widest text-neutral-950 transition-all hover:bg-neutral-100"
+  >
+    Create Account
+  </Link>
+</div>
+      </div>
+
+      {/* Visual Emblem Box */}
+      <div className="lg:col-span-5">
+        <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-8 shadow-sm">
+          <Image
+            src="/mekalogo.png"
+            alt="MekaWC Emblem"
+            width={380}
+            height={380}
+            priority
+            className="h-full w-full object-contain transition-transform duration-500 hover:scale-105"
+          />
+          <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-neutral-200/80 bg-white/90 p-3 text-center backdrop-blur-md">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+              MekaWC Authentic • South Africa
             </p>
-
-            <h1 className="mt-5 text-5xl font-black tracking-tight text-gray-950 sm:text-6xl">
-              Dress with confidence.
-            </h1>
-
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Discover modern clothing and lifestyle products
-              created for everyday comfort, confidence and
-              effortless style.
-            </p>
-
-            <div className="mt-9 flex flex-wrap gap-4">
-              <Link
-                href="/products"
-                className="btn-primary rounded-full px-7"
-              >
-                Shop now
-              </Link>
-
-              <Link
-                href="/register"
-                className="btn-secondary rounded-full px-7"
-              >
-                Create account
-              </Link>
-            </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-          <div className="relative mx-auto flex w-full max-w-lg items-center justify-center">
-            <div className="absolute h-80 w-80 rounded-full bg-emerald-100 blur-3xl" />
+      {/* --- MINIMAL TRUST TICKER --- */}
+      <section className="border-b border-neutral-200 bg-neutral-50 py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-5 w-5 stroke-[1.5] text-neutral-700" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  PayFast Encrypted
+                </p>
+                <p className="text-[11px] text-neutral-500">Secure checkout</p>
+              </div>
+            </div>
 
-            <Image
-              src="/mekalogo.png"
-              alt="MekaWC"
-              width={420}
-              height={420}
-              priority
-              className="relative h-auto w-full max-w-sm object-contain drop-shadow-xl"
-            />
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5 stroke-[1.5] text-neutral-700" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  Doorstep Delivery
+                </p>
+                <p className="text-[11px] text-neutral-500">Full order tracking</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 stroke-[1.5] text-neutral-700" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  Heavyweight Cotton
+                </p>
+                <p className="text-[11px] text-neutral-500">Premium build quality</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <RefreshCw className="h-5 w-5 stroke-[1.5] text-neutral-700" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  Simple Exchanges
+                </p>
+                <p className="text-[11px] text-neutral-500">Hassle-free service</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-<ComingSoonSlider />
-      <section className="px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-gray-500">
-                Explore the store
-              </p>
 
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">
-                Find your next favourite item
+      {/* --- SLIDER SECTION --- */}
+      <section className="border-b border-neutral-200 bg-white py-6">
+        <ComingSoonSlider />
+      </section>
+
+      {/* --- CURATED COLLECTIONS --- */}
+      <section className="py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col justify-between gap-4 border-b border-neutral-200 pb-6 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-neutral-400">
+                Store Catalog
+              </p>
+              <h2 className="mt-1 text-3xl font-black uppercase tracking-tight text-neutral-950 sm:text-4xl">
+                Explore Collections
               </h2>
             </div>
 
             <Link
               href="/products"
-              className="font-semibold text-gray-700 hover:text-gray-950 hover:underline"
+              className="group inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-neutral-900 transition hover:text-neutral-600"
             >
-              View all products →
+              View All Products
+              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </Link>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <CategoryCard
-              title="New arrivals"
-              description="Explore the newest products available from MekaWC."
-              href="/products?sort=newest"
-            />
-
-            <CategoryCard
-              title="Everyday style"
-              description="Comfortable products selected for daily wear."
-              href="/products"
-            />
-
-            <CategoryCard
-              title="Customer favourites"
-              description="Discover products customers have saved and purchased."
-              href="/products"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-gray-50 px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-bold uppercase tracking-widest text-gray-500">
-              Why MekaWC
-            </p>
-
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">
-              Shopping made simple
-            </h2>
-          </div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {benefits.map((benefit) => {
-              const Icon = benefit.icon
-
-              return (
-                <article
-                  key={benefit.title}
-                  className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100">
-                    <Icon className="h-6 w-6 text-gray-800" />
+            {collections.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8 transition-all duration-300 hover:border-neutral-400 hover:shadow-lg"
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                      {item.category}
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 text-neutral-400 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-neutral-950" />
                   </div>
 
-                  <h3 className="mt-5 text-lg font-semibold text-gray-950">
-                    {benefit.title}
+                  <h3 className="mt-6 text-2xl font-black uppercase tracking-tight text-neutral-950">
+                    {item.title}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    {benefit.description}
+                  <p className="mt-2 text-xs leading-relaxed text-neutral-500">
+                    {item.description}
                   </p>
-                </article>
-              )
-            })}
+                </div>
+
+                <div className="mt-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-950">
+                  <span>Browse Category</span>
+                  <span className="block h-px w-6 bg-neutral-950 transition-all group-hover:w-12" />
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="px-4 py-20 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl rounded-3xl bg-gray-950 px-6 py-14 text-center text-white sm:px-12">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-white/60">
-            The store is open
+      {/* --- BRAND STATEMENT --- */}
+      <section className="border-b border-t border-neutral-200 bg-white py-24 text-center">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-neutral-400">
+            The MekaWC Ethos
           </p>
+          <blockquote className="mt-6 text-2xl font-bold uppercase leading-relaxed tracking-tight text-neutral-950 sm:text-3xl">
+            "We design apparel for those who navigate the world with unshakeable confidence, identity, and everyday style."
+          </blockquote>
+          <div className="mt-8 flex justify-center">
+            <span className="h-0.5 w-12 bg-neutral-950" />
+          </div>
+        </div>
+      </section>
 
-          <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
-            Find something made for you.
+      {/* --- MINIMAL CALL TO ACTION --- */}
+      <section className="bg-neutral-950 py-20 text-white">
+        <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-neutral-400">
+            Store Open
+          </p>
+          <h2 className="mt-3 text-3xl font-black uppercase tracking-tight sm:text-5xl">
+            Find Your Signature Look.
           </h2>
-
-          <p className="mx-auto mt-5 max-w-2xl leading-7 text-white/70">
-            Browse the MekaWC collection, save your favourites
-            and enjoy secure online checkout.
+          <p className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-neutral-400 sm:text-sm">
+            Browse the full collection, save your favorites, and enjoy seamless online checkout via PayFast.
           </p>
-
-          <Link
-            href="/products"
-            className="mt-8 inline-flex rounded-full bg-white px-7 py-3 font-bold text-gray-950 transition hover:bg-gray-100"
-          >
-            Start shopping
-          </Link>
+          <div className="mt-8 flex justify-center">
+            <Link
+              href="/products"
+              className="rounded-full bg-white px-8 py-4 text-xs font-bold uppercase tracking-widest text-neutral-950 transition hover:bg-neutral-200"
+            >
+              Start Shopping
+            </Link>
+          </div>
         </div>
       </section>
     </main>
-  )
-}
-
-type CategoryCardProps = {
-  title: string
-  description: string
-  href: string
-}
-
-function CategoryCard({
-  title,
-  description,
-  href,
-}: CategoryCardProps) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-3xl border border-gray-200 bg-gray-50 p-8 transition hover:-translate-y-1 hover:border-gray-300 hover:shadow-lg"
-    >
-      <h3 className="text-2xl font-bold text-gray-950">
-        {title}
-      </h3>
-
-      <p className="mt-3 leading-7 text-gray-600">
-        {description}
-      </p>
-
-      <span className="mt-8 inline-flex font-semibold text-gray-800 transition group-hover:translate-x-1">
-        Shop collection →
-      </span>
-    </Link>
   )
 }
