@@ -11,11 +11,11 @@ type ComingSoonItem = {
 }
 
 const comingSoonItems: ComingSoonItem[] = [
-  {
-    id: 1,
-    name: "FOUR-LTR WORD Tee",
-    image: "/coming-soon/four-ltr-word.svg",
-  },
+  // {
+  //   id: 1,
+  //   name: "FOUR-LTR WORD Tee",
+  //   image: "/coming-soon/four-ltr-word.svg",
+  // },
   {
     id: 2,
     name: "MekaWC Signature Bucket Hat",
