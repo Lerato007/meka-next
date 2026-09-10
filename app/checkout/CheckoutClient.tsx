@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   type ChangeEvent,
   type FormEvent,
-  useMemo,
   useState,
 } from "react"
 
@@ -24,9 +23,6 @@ import Label from "@/components/ui/Label"
 import Select from "@/components/ui/Select"
 import { useRouter } from "next/navigation"
 
-const SHIPPING_FEE = 100
-const FREE_SHIPPING_THRESHOLD = 500
-
 function formatPrice(value: number) {
   return new Intl.NumberFormat("en-ZA", {
     style: "currency",
@@ -36,36 +32,26 @@ function formatPrice(value: number) {
 
 export default function CheckoutPage() {
   const {
-  items,
-  itemCount,
-  subtotal,
-} = useCart()
+    items,
+    itemCount,
+    subtotal,
+  } = useCart()
 
-const router = useRouter()
+  const router = useRouter()
 
   const [form, setForm] =
-  useState<CheckoutForm>(initialCheckoutForm)
+    useState<CheckoutForm>(initialCheckoutForm)
 
-const [errors, setErrors] =
-  useState<CheckoutFormErrors>({})
+  const [errors, setErrors] =
+    useState<CheckoutFormErrors>({})
 
-const [isSubmitting, setIsSubmitting] =
-  useState(false)
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
 
-const [submitError, setSubmitError] =
-  useState("")
+  const [submitError, setSubmitError] =
+    useState("")
 
-  const shipping = useMemo(() => {
-    if (
-      subtotal === 0 ||
-      subtotal >= FREE_SHIPPING_THRESHOLD
-    ) {
-      return 0
-    }
-
-    return SHIPPING_FEE
-  }, [subtotal])
-
+  const shipping = 0
   const total = subtotal + shipping
 
   function updateField(
@@ -102,86 +88,86 @@ const [submitError, setSubmitError] =
   }
 
   async function handleSubmit(
-  event: FormEvent<HTMLFormElement>
-) {
-  event.preventDefault()
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault()
 
-  setSubmitError("")
+    setSubmitError("")
 
-  const validationErrors =
-    validateCheckoutForm(form)
+    const validationErrors =
+      validateCheckoutForm(form)
 
-  setErrors(validationErrors)
+    setErrors(validationErrors)
 
-  if (hasCheckoutErrors(validationErrors)) {
-    const firstInvalidField =
-      Object.keys(validationErrors)[0]
+    if (hasCheckoutErrors(validationErrors)) {
+      const firstInvalidField =
+        Object.keys(validationErrors)[0]
 
-    document
-      .getElementById(firstInvalidField)
-      ?.focus()
+      document
+        .getElementById(firstInvalidField)
+        ?.focus()
 
-    return
-  }
-
-  if (items.length === 0) {
-    setSubmitError(
-      "Your cart is empty. Add a product before checking out."
-    )
-
-    return
-  }
-
-  setIsSubmitting(true)
-
-  try {
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phone: form.phone,
-        addressLine1: form.addressLine1,
-        addressLine2: form.addressLine2,
-        city: form.city,
-        province: form.province,
-        postalCode: form.postalCode,
-
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      }),
-    })
-
-    const result = await response.json()
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.message ||
-          "We could not create your order."
-      )
+      return
     }
 
-    router.push(
-  `/payment/${encodeURIComponent(result.order.id)}`
-)
-  } catch (error) {
-    console.error("Checkout failed:", error)
+    if (items.length === 0) {
+      setSubmitError(
+        "Your cart is empty. Add a product before checking out."
+      )
 
-    setSubmitError(
-      error instanceof Error
-        ? error.message
-        : "We could not create your order. Please try again."
-    )
-  } finally {
-    setIsSubmitting(false)
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          addressLine1: form.addressLine1,
+          addressLine2: form.addressLine2,
+          city: form.city,
+          province: form.province,
+          postalCode: form.postalCode,
+
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message ||
+            "We could not create your order."
+        )
+      }
+
+      router.push(
+        `/payment/${encodeURIComponent(result.order.id)}`
+      )
+    } catch (error) {
+      console.error("Checkout failed:", error)
+
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "We could not create your order. Please try again."
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-}
 
   if (items.length === 0) {
     return (
@@ -494,22 +480,10 @@ const [submitError, setSubmitError] =
 
               <div className="flex items-center justify-between text-gray-600">
                 <span>Shipping</span>
-                <span>
-                  {shipping === 0
-                    ? "Free"
-                    : formatPrice(shipping)}
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                  Free
                 </span>
               </div>
-
-              {subtotal < FREE_SHIPPING_THRESHOLD && (
-                <p className="rounded-lg bg-gray-50 p-3 text-xs leading-5 text-gray-600">
-                  Add{" "}
-                  {formatPrice(
-                    FREE_SHIPPING_THRESHOLD - subtotal
-                  )}{" "}
-                  more to qualify for free shipping.
-                </p>
-              )}
 
               <div className="flex items-center justify-between border-t border-gray-200 pt-4 text-base font-semibold text-gray-900">
                 <span>Total</span>
@@ -518,35 +492,35 @@ const [submitError, setSubmitError] =
             </div>
 
             {submitError && (
-  <div
-    role="alert"
-    className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-  >
-    {submitError}
-  </div>
-)}
+              <div
+                role="alert"
+                className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              >
+                {submitError}
+              </div>
+            )}
 
-<div
-  className="sr-only"
-  aria-live="polite"
-  aria-atomic="true"
->
-  {isSubmitting
-    ? "Your order is being created. Please wait."
-    : ""}
-</div>
+            <div
+              className="sr-only"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {isSubmitting
+                ? "Your order is being created. Please wait."
+                : ""}
+            </div>
 
             <button
-  type="submit"
-  disabled={isSubmitting}
-  aria-disabled={isSubmitting}
-  aria-busy={isSubmitting}
-  className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
->
-  {isSubmitting
-    ? "Creating order..."
-    : "Continue to payment"}
-</button>
+              type="submit"
+              disabled={isSubmitting}
+              aria-disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="mt-6 inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {isSubmitting
+                ? "Creating order..."
+                : "Continue to payment"}
+            </button>
 
             <Link
               href="/cart"

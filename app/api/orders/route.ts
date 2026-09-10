@@ -4,8 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { checkAndAlertLowStock } from "@/lib/services/product-service"
 
-const SHIPPING_FEE = 100
-const FREE_SHIPPING_THRESHOLD = 500
+const SHIPPING_FEE = 0
 const ORDER_RESERVATION_MINUTES = 30
 
 type OrderItemInput = {
@@ -272,9 +271,7 @@ export async function POST(request: Request) {
         0
       )
 
-      const shipping =
-        subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE
-
+      const shipping = SHIPPING_FEE
       const total = subtotal + shipping
 
       for (const item of calculatedItems) {
