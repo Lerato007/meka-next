@@ -2,7 +2,7 @@ name: Build and Deploy Next.js to Azure App Service
 
 on:
   push:
-    branches: [ "main" ] # Triggers whenever you push code to your main branch
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy:
@@ -40,12 +40,12 @@ jobs:
         AUTH_TRUST_HOST: "true"
 
     - name: Prepare Standalone Artifact
-   run: |
-     rm -rf oryx-manifest.toml
-     mkdir -p .next/standalone/public
-     mkdir -p .next/standalone/.next/static
-     cp -R public/* .next/standalone/public/
-     cp -R .next/static/* .next/standalone/.next/static/
+      run: |
+        rm -rf oryx-manifest.toml
+        mkdir -p .next/standalone/public
+        mkdir -p .next/standalone/.next/static
+        cp -R public/* .next/standalone/public/
+        cp -R .next/static/* .next/standalone/.next/static/
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
