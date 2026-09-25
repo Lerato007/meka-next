@@ -25,6 +25,19 @@ jobs:
         npm run build
       env:
         DATABASE_URL: "postgresql://mekaadmin:Common%40sence500%3F%21@mekawc-db-bnsneazvqdw6i.postgres.database.azure.com:5432/postgres?sslmode=require"
+        RESEND_API_KEY: "${{ secrets.RESEND_API_KEY }}"
+        AUTH_SECRET: "${{ secrets.AUTH_SECRET }}"
+        AUTH_GOOGLE_ID: "${{ secrets.AUTH_GOOGLE_ID }}"
+        AUTH_GOOGLE_SECRET: "${{ secrets.AUTH_GOOGLE_SECRET }}"
+        NEXT_PUBLIC_SUPABASE_URL: "https://auieyynwtskqhewkcutw.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_A68zcLFSvlmARPdkj8JLRg_EuLkF6x9"
+        SUPABASE_SERVICE_ROLE_KEY: "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+        SUPABASE_STORAGE_BUCKET: "product-images"
+        NEXT_PUBLIC_SITE_URL: "https://mekawc-app-bnsneazvqdw6i.azurewebsites.net"
+        EMAIL_FROM: "MekaWC <onboarding@resend.dev>"
+        EMAIL_TEST_RECIPIENT: "leratomoshabi500@gmail.com"
+        STORE_OWNER_EMAIL: "leratomoshabi500@gmail.com"
+        AUTH_TRUST_HOST: "true"
 
     - name: Prepare Standalone Artifact
       run: |
