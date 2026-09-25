@@ -40,11 +40,12 @@ jobs:
         AUTH_TRUST_HOST: "true"
 
     - name: Prepare Standalone Artifact
-      run: |
-        mkdir -p .next/standalone/public
-        mkdir -p .next/standalone/.next/static
-        cp -R public/* .next/standalone/public/
-        cp -R .next/static/* .next/standalone/.next/static/
+   run: |
+     rm -rf oryx-manifest.toml
+     mkdir -p .next/standalone/public
+     mkdir -p .next/standalone/.next/static
+     cp -R public/* .next/standalone/public/
+     cp -R .next/static/* .next/standalone/.next/static/
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
