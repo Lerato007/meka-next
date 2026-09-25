@@ -42,14 +42,15 @@ jobs:
     - name: Prepare Standalone Artifact
       run: |
         rm -rf oryx-manifest.toml
-        mkdir -p .next/standalone/public
-        mkdir -p .next/standalone/.next/static
-        cp -R public/* .next/standalone/public/
-        cp -R .next/static/* .next/standalone/.next/static/
+        # Move standalone contents to the root of the deployment package
+        cp -R .next/standalone/* .
+        mkdir -p public .next/static
+        cp -R public/* .next/standalone/public/ 2>/dev/null || true
+        cp -R .next/static/* .next/standalone/.next/static/ 2>/dev/null || true
 
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
         app-name: 'mekawc-app-bnsneazvqdw6i'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: '.next/standalone'
+        package: '.'
