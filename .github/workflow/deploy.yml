@@ -1,0 +1,41 @@
+name: Build and Deploy Next.js to Azure App Service
+
+on:
+  push:
+    branches: [ "main" ] # Triggers whenever you push code to your main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies and build
+      run: |
+        npm ci
+        npx prisma generate
+        npm run build
+      env:
+        DATABASE_URL: "postgresql://mekaadmin:Common%40sence500%3F%21@mekawc-db-bnsneazvqdw6i.postgres.database.azure.com:5432/postgres?sslmode=require"
+
+    - name: Prepare Standalone Artifact
+      run: |
+        mkdir -p .next/standalone/public
+        mkdir -p .next/standalone/.next/static
+        cp -R public/* .next/standalone/public/
+        cp -R .next/static/* .next/standalone/.next/static/
+
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'mekawc-app-bnsneazvqdw6i'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: '.next/standalone'

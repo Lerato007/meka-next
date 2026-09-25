@@ -98,6 +98,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Required for Azure App Service standalone packaging
+  output: "standalone",
+
   allowedDevOrigins: ["peroxide-museum-bottling.ngrok-free.dev"],
 
   experimental: {
